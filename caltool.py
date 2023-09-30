@@ -16,18 +16,6 @@ def warning_message(text: str):
     print(f'* Предупреждение. {text}')
     QtWidgets.QMessageBox.warning(None, "Предупреждение", text)
 
-class NumberDelegate(QtWidgets.QItemDelegate):
-    def createEditor(self, parent, option, index):
-        editor = QtWidgets.QLineEdit(parent)
-        validator = QtGui.QDoubleValidator()
-        editor.setValidator(validator)
-        return editor
-
-    def setModelData(self, editor, model, index):
-        text = editor.text()
-        model.setData(index, float(text))
-
-
 Ui_MainWindow, QMainWindow = QtUiTools.loadUiType('caltool.ui')
 
 class MainWindow(QMainWindow, Ui_MainWindow):
@@ -37,6 +25,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     btn_add_row: QtWidgets.QPushButton
     btn_del_row: QtWidgets.QPushButton
     action_save: QtGui.QAction
+    action_open: QtGui.QAction
 
     def __init__(self):
         super().__init__()
@@ -44,6 +33,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # self.showMaximized()
 
         self.action_save.triggered.connect(self.save)
+        self.action_open.triggered.connect(self.load)
 
         self.tableWidget.setColumnCount(5)
         labels = ['Образец', 'Температура, °C', 'Тепловой эффект, Дж/г', 'Сигнал термопары, мВ', 'Площадь пика, мВ*с']
@@ -67,8 +57,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.plotLayout.addWidget(self.canvas_temp)
         self.plotLayout.addWidget(self.canvas_sens)
         self.redraw_figures()
-        # self.tableWidget.setItemDelegateForColumn(2, NumberDelegate())
-        # self.tableWidget.setItemDelegateForColumn(3, NumberDelegate())
 
     def clear_figures(self):
         self.ax_temp.clear()
@@ -145,8 +133,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         yn = np.poly1d(coeff)
         Xdata = np.linspace(xdata[0], xdata[-1], 100)
         Ydata = yn(Xdata)
-        self.ax_sens.scatter(xdata, ydata)
-        self.ax_sens.plot(Xdata, Ydata)
+        self.ax_sens.scatter(xdata, ydata, s=3, color='red')
+        for i in range(len(name)):
+            self.ax_sens.text(xdata[i], ydata[i], ' '+name[i])
+        self.ax_sens.plot(Xdata, Ydata, lw=1, color='blue')
         self.temp_coeff = coeff
 
     def calibration_temp(self, name: list[str], temp: list[float], emf: list[float]):
@@ -156,17 +146,27 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         yn = np.poly1d(coeff)
         Xdata = np.linspace(xdata[0], xdata[-1], 100)
         Ydata = yn(Xdata)
-        self.ax_temp.scatter(xdata, ydata)
-        self.ax_temp.plot(Xdata, Ydata)
+        self.ax_temp.scatter(xdata, ydata, s=3, color='red')
+        for i in range(len(name)):
+            self.ax_temp.text(xdata[i], ydata[i], ' '+name[i])
+        self.ax_temp.plot(Xdata, Ydata, lw=1, color='blue')
         self.sens_coeff = coeff
 
     def save(self):
-        with open('test_data/test.fus-cal-data', 'w') as f:
-            for line in self.data:
-                f.writelines(str(line))
-        with open('test_data/test.fus-cal-coeff', 'w') as f:
-            f.writelines(str(self.temp_coeff))
-            f.writelines(str(self.sens_coeff))
+        np.save('test_data/data.npy', np.array(self.data))
+        np.save('test_data/coeff.npy', self.temp_coeff)
+
+    def load(self):
+        data: np.ndarray = np.load('test_data/data.npy')
+        rows_num = data[0].shape[0]
+        self.tableWidget.setRowCount(rows_num)
+        for i in range(rows_num):
+            self.tableWidget.setItem(i, 0, QtWidgets.QTableWidgetItem(data[0][i]))
+            self.tableWidget.setItem(i, 1, QtWidgets.QTableWidgetItem(data[1][i]))
+            self.tableWidget.setItem(i, 2, QtWidgets.QTableWidgetItem(data[2][i]))
+            self.tableWidget.setItem(i, 3, QtWidgets.QTableWidgetItem(data[3][i]))
+            self.tableWidget.setItem(i, 4, QtWidgets.QTableWidgetItem(data[4][i]))
+        self.do_calibration()
 
 
 if __name__ == '__main__':
