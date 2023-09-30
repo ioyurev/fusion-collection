@@ -10,10 +10,10 @@ import tempfile
 import pandas as pd
 
 LABEL_SAMPLE = 'Образец'
-LABEL_TEMP = 'Температура, °C'
-LABEL_EMF = 'Сигнал термопары, мВ'
-LABEL_PAREA = 'Площадь пика, мВ*с'
-LABEL_TEFF = 'Тепловой эффект, Дж/г'
+LABEL_TEMP = 'Температура,\n°C'
+LABEL_EMF = 'Сигнал температурной\nтермопары, мВ'
+LABEL_PAREA = 'Площадь пика,\nмВ*с'
+LABEL_TEFF = 'Тепловой эффект,\nДж/г'
 LABELS = [LABEL_SAMPLE, LABEL_TEMP, LABEL_TEFF, LABEL_EMF, LABEL_PAREA]
 
 def pick_save_path():
@@ -50,6 +50,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.tableWidget.setColumnCount(len(LABELS))
         self.tableWidget.setRowCount(3)
         self.tableWidget.setHorizontalHeaderLabels(LABELS)
+        self.tableWidget.resizeColumnsToContents()
 
         self.btn_do_cal.clicked.connect(self.do_calibration)
         self.btn_add_row.clicked.connect(self.add_row)
