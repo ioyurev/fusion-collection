@@ -5,12 +5,22 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import (
     FigureCanvasQTAgg as FigureCanvas,
     NavigationToolbar2QT as NavigationToolbar)
+import zipfile
+import tempfile
+import pandas as pd
 
-def str_to_float(lst: list):
-    return [float(x) for x in lst]
+LABEL_SAMPLE = 'Образец'
+LABEL_TEMP = 'Температура, °C'
+LABEL_EMF = 'Сигнал термопары, мВ'
+LABEL_PAREA = 'Площадь пика, мВ*с'
+LABEL_TEFF = 'Тепловой эффект, Дж/г'
+LABELS = [LABEL_SAMPLE, LABEL_TEMP, LABEL_TEFF, LABEL_EMF, LABEL_PAREA]
 
-def to_str(lst):
-    return [str(x) for x in lst]
+def pick_save_path():
+    return QtWidgets.QFileDialog.getSaveFileName(None, 'Save file')[0]
+
+def pick_open_path():
+    return QtWidgets.QFileDialog.getOpenFileName(None, 'Open file')[0]
 
 def warning_message(text: str):
     print(f'* Предупреждение. {text}')
@@ -26,6 +36,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     btn_del_row: QtWidgets.QPushButton
     action_save: QtGui.QAction
     action_open: QtGui.QAction
+    label_cal_temp: QtWidgets.QLabel
+    label_cal_sens: QtWidgets.QLabel
 
     def __init__(self):
         super().__init__()
@@ -33,12 +45,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # self.showMaximized()
 
         self.action_save.triggered.connect(self.save)
-        self.action_open.triggered.connect(self.load)
+        self.action_open.triggered.connect(self.open)
 
-        self.tableWidget.setColumnCount(5)
-        labels = ['Образец', 'Температура, °C', 'Тепловой эффект, Дж/г', 'Сигнал термопары, мВ', 'Площадь пика, мВ*с']
+        self.tableWidget.setColumnCount(len(LABELS))
         self.tableWidget.setRowCount(3)
-        self.tableWidget.setHorizontalHeaderLabels(labels)
+        self.tableWidget.setHorizontalHeaderLabels(LABELS)
 
         self.btn_do_cal.clicked.connect(self.do_calibration)
         self.btn_add_row.clicked.connect(self.add_row)
@@ -48,10 +59,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.fig_sens = plt.figure()
         self.ax_temp = self.fig_temp.add_subplot(111)
         self.ax_sens = self.fig_sens.add_subplot(111)
-        self.ax_temp.set_xlabel('Сигнал термопары, мВ')
-        self.ax_temp.set_ylabel('Температура, °C')
-        self.ax_sens.set_xlabel('Площадь пика, мВ*с')
-        self.ax_sens.set_ylabel('Тепловой эффект, Дж/г')
+        self.ax_temp.set_xlabel(LABEL_EMF)
+        self.ax_temp.set_ylabel(LABEL_TEMP)
+        self.ax_sens.set_xlabel(LABEL_PAREA)
+        self.ax_sens.set_ylabel(LABEL_TEFF)
         self.canvas_temp = FigureCanvas(self.fig_temp)
         self.canvas_sens = FigureCanvas(self.fig_sens)
         self.plotLayout.addWidget(self.canvas_temp)
@@ -96,78 +107,107 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         thermal_effect = self.get_column_data(2, is_numerical=True)
         emf_signal = self.get_column_data(3, is_numerical=True)
         peak_area = self.get_column_data(4, is_numerical=True)
-        data = (name, temperature, thermal_effect, emf_signal, peak_area) 
-        if None in data:
-            print('* Один из стоблцов не заполнен или заполнен неправильно')
-            return None
+        data = (name, temperature, thermal_effect, emf_signal, peak_area)
+        for el in data:
+            if el is None:
+                print('* Один из стоблцов не заполнен или заполнен неправильно')
+                return None
         else:
-            return data
+            df = pd.DataFrame()
+            for index, label in enumerate(LABELS):
+                df[label] = data[index]
+            return df
 
     def get_column_data(self, num: int, is_numerical=False):
         lst = []
-        result = None
         for row in range(self.tableWidget.rowCount()):
             lst.append(self.tableWidget.item(row, num).text())
         if is_numerical:
-            try:
-                result = str_to_float(lst)
-            except:
-                warning_message(f'В столбце "{self.tableWidget.horizontalHeaderItem(num).text()}" могут быть только числовые значения!')
+            dtype=float
         else:
-            result = lst
-        return result
+            dtype=str
+        try:
+            return np.array(lst, dtype=dtype)
+        except:
+            warning_message(f'В столбце "{self.tableWidget.horizontalHeaderItem(num).text()}" могут быть только числовые значения!')
+            return None
 
     def do_calibration(self):
         if self.table_is_complete():
-            self.data = self.get_data()
-            if self.data is not None:
+            self.df = self.get_data()
+            if self.df is not None:
                 self.clear_figures()
-                self.calibration_temp(name=self.data[0], temp=self.data[1], emf=self.data[3])
-                self.calibration_sens(name=self.data[0], thermal_effect=self.data[2], peak_area=self.data[4])
+                self.calibration_temp()
+                self.calibration_sens()
                 self.redraw_figures()
 
-    def calibration_sens(self, name: list[str], peak_area: list[float], thermal_effect: list[float]):
-        xdata = peak_area
-        ydata = thermal_effect
+    def calibration_sens(self):
+        df = pd.DataFrame()
+        df[LABEL_PAREA] = self.df[LABEL_PAREA]
+        df[LABEL_TEFF] = self.df[LABEL_TEFF]
+        df.sort_values(LABEL_PAREA, inplace=True)
+        xdata = df[LABEL_PAREA].to_numpy()
+        ydata = df[LABEL_TEFF].to_numpy()
         coeff = np.polyfit(xdata, ydata, 2)
         yn = np.poly1d(coeff)
         Xdata = np.linspace(xdata[0], xdata[-1], 100)
         Ydata = yn(Xdata)
         self.ax_sens.scatter(xdata, ydata, s=3, color='red')
-        for i in range(len(name)):
-            self.ax_sens.text(xdata[i], ydata[i], ' '+name[i])
+        for i in range(len(self.df[LABEL_SAMPLE])):
+            self.ax_sens.text(xdata[i], ydata[i], ' '+self.df[LABEL_SAMPLE][i])
         self.ax_sens.plot(Xdata, Ydata, lw=1, color='blue')
-        self.temp_coeff = coeff
+        self.sens_coeff = coeff
+        self.label_cal_sens.setText(f'f(x) = {"{:.3e}".format(coeff[0])} * x^2 + {"{:.3e}".format(coeff[1])} * x + {"{:.3e}".format(coeff[2])}')
 
-    def calibration_temp(self, name: list[str], temp: list[float], emf: list[float]):
-        xdata = emf
-        ydata = temp
+    def calibration_temp(self):
+        df = pd.DataFrame()
+        df[LABEL_EMF] = self.df[LABEL_EMF]
+        df[LABEL_TEMP] = self.df[LABEL_TEMP]
+        df.sort_values(LABEL_EMF, inplace=True)
+        xdata = df[LABEL_EMF].to_numpy()
+        ydata = df[LABEL_TEMP].to_numpy()
         coeff = np.polyfit(xdata, ydata, 2)
         yn = np.poly1d(coeff)
         Xdata = np.linspace(xdata[0], xdata[-1], 100)
         Ydata = yn(Xdata)
         self.ax_temp.scatter(xdata, ydata, s=3, color='red')
-        for i in range(len(name)):
-            self.ax_temp.text(xdata[i], ydata[i], ' '+name[i])
+        for i in range(len(self.df[LABEL_SAMPLE])):
+            self.ax_temp.text(xdata[i], ydata[i], ' '+self.df[LABEL_SAMPLE][i])
         self.ax_temp.plot(Xdata, Ydata, lw=1, color='blue')
-        self.sens_coeff = coeff
+        self.temp_coeff = coeff
+        self.label_cal_temp.setText(f'f(x) = {"{:.3e}".format(coeff[0])} * x^2 + {"{:.3e}".format(coeff[1])} * x + {"{:.3e}".format(coeff[2])}')
 
     def save(self):
-        np.save('test_data/data.npy', np.array(self.data))
-        np.save('test_data/coeff.npy', self.temp_coeff)
+        savepath = pick_save_path()
+        print(f'* Выбран путь для сохранения: {savepath}')
+        if savepath:
+            with tempfile.TemporaryDirectory() as tempdir:
+                print(f'* Создана временная папка для сохранения: {tempdir}')
+                with open(f'{tempdir}/VERSION', 'w') as f:
+                    f.write(str(1))
+                self.df.to_csv(f'{tempdir}/{"data.csv"}', index=False)
+                np.savetxt(f'{tempdir}/{"coeff_temp.csv"}', self.temp_coeff, delimiter=',')
+                np.savetxt(f'{tempdir}/{"coeff_sens.csv"}', self.sens_coeff, delimiter=',')
+                with zipfile.ZipFile(savepath, 'w', zipfile.ZIP_DEFLATED) as zipf:
+                    zipf.write(f'{tempdir}/VERSION', arcname='VERSION')
+                    zipf.write(f'{tempdir}/{"data.csv"}', arcname='data.csv')
+                    zipf.write(f'{tempdir}/{"coeff_temp.csv"}', arcname='coeff_temp.csv')
+                    zipf.write(f'{tempdir}/{"coeff_sens.csv"}', arcname='coeff_sens.csv')
 
-    def load(self):
-        data: np.ndarray = np.load('test_data/data.npy')
-        rows_num = data[0].shape[0]
+    def open(self):
+        openpath = pick_open_path()
+        if openpath:
+            with zipfile.ZipFile(openpath, 'r') as zipf:
+                self.df = pd.read_csv(zipf.open('data.csv'), sep=',', decimal='.')
+        data_array = self.df.to_numpy()
+        rows_num = data_array.shape[0]
         self.tableWidget.setRowCount(rows_num)
-        for i in range(rows_num):
-            self.tableWidget.setItem(i, 0, QtWidgets.QTableWidgetItem(data[0][i]))
-            self.tableWidget.setItem(i, 1, QtWidgets.QTableWidgetItem(data[1][i]))
-            self.tableWidget.setItem(i, 2, QtWidgets.QTableWidgetItem(data[2][i]))
-            self.tableWidget.setItem(i, 3, QtWidgets.QTableWidgetItem(data[3][i]))
-            self.tableWidget.setItem(i, 4, QtWidgets.QTableWidgetItem(data[4][i]))
+        for row in range(data_array.shape[0]):
+            for col in range(data_array.shape[1]):
+                value = data_array[row, col]
+                item = QtWidgets.QTableWidgetItem(str(value))
+                self.tableWidget.setItem(row, col, item)
         self.do_calibration()
-
 
 if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
