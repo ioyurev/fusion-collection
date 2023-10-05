@@ -1,6 +1,7 @@
-from PySide6 import QtCore, QtSerialPort, QtWidgets
+from PySide6 import QtCore, QtWidgets
 from time import time
 import serial
+import serial.tools.list_ports
 
 BAUDRATE = 9600
 ENDCHAR = chr(13)
@@ -39,8 +40,7 @@ class SerialReader(QtCore.QThread):
         self.ser.write(READCMD_2)
         t2 = self.ser.read_until(ENDCHAR_BYTES)
         tm = time() - self.start_time
-        data = (tm, t1, t2)
-        self.received_data.emit(data)
+        self.received_data.emit((tm, t1, t2))
 
     def close(self):
         self.timer.stop()

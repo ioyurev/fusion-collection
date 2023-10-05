@@ -1,10 +1,6 @@
 import sys
 import numpy as np
 from PySide6 import QtWidgets, QtUiTools, QtGui, QtCore
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_qt5agg import (
-    FigureCanvasQTAgg as FigureCanvas,
-    NavigationToolbar2QT as NavigationToolbar)
 import zipfile
 import tempfile
 import pandas as pd
@@ -45,6 +41,13 @@ def pick_open_path():
 def warning_message(text: str):
     print(f'* Предупреждение. {text}')
     QtWidgets.QMessageBox.warning(None, "Предупреждение", text)
+
+def open_calibration_file(path: str):
+        with zipfile.ZipFile(path, 'r') as zipf:
+            df = pd.read_csv(zipf.open('data.csv'), sep=',', decimal='.', header=None, names=LABELS)
+            coeff_temp = np.loadtxt(zipf.open('coeff_temp.csv'), dtype=float)
+            coenf_sens = np.loadtxt(zipf.open('coeff_sens.csv'), dtype=float)
+        return df, coeff_temp, coenf_sens
 
 Ui_MainWindow, QMainWindow = QtUiTools.loadUiType('caltool.ui')
 
@@ -252,11 +255,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def open(self):
         openpath = pick_open_path()
         print(f"* Выбран файл для открытия: {openpath}")
-        if openpath != '':
-            with zipfile.ZipFile(openpath, 'r') as zipf:
-                self.df = pd.read_csv(zipf.open('data.csv'), sep=',', decimal='.', header=None, names=LABELS)
-        else:
+        if openpath == '':
             return
+        self.df = open_calibration_file(openpath)[0]
         self.set_editor_enabled(True)
         self.action_close.setEnabled(True)
         self.action_save.setEnabled(True)
