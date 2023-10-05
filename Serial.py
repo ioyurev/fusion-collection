@@ -1,32 +1,56 @@
-from PySide6 import QtCore, QtSerialPort
-from pglive.sources.data_connector import DataConnector
+from PySide6 import QtCore, QtSerialPort, QtWidgets
+from time import time
+import serial
+
+BAUDRATE = 9600
+ENDCHAR = chr(13)
+ENDCHAR_BYTES = bytes(ENDCHAR, 'ascii')
+READCMD_1 = bytes('#01' + ENDCHAR, 'ascii')
+READCMD_2 = bytes('#02' + ENDCHAR, 'ascii')
+
+def get_serial_ports():
+    ports = serial.tools.list_ports.comports()
+    port_list = [port.device for port in ports]
+    return port_list
 
 class SerialReader(QtCore.QThread):
-    received_data = QtCore.Signal(QtCore.QByteArray)
+    received_data = QtCore.Signal(tuple)
+    port: str
 
-    def __init__(self, port: str, baudrate: int, data_connector: DataConnector) -> None:
-        super().__init__(parent=None)
-        self.data_connector: DataConnector = data_connector
-        self.port = QtSerialPort.QSerialPort()
-        self.port.setBaudRate(baudrate)
-        self.port.setPortName(port)
-        self.port.readyRead.connect(self.readFromPort)
-        # self.open()
+    def start(self,) -> None:
+        result = super().start()
+        self.ser = serial.Serial(port=self.port,
+                    baudrate=BAUDRATE,
+                    parity=serial.PARITY_ODD,
+                    stopbits=serial.STOPBITS_TWO,
+                    bytesize=serial.EIGHTBITS)
+        self.start_reading()
+        return result
 
-    def readFromPort(self):
-        data = self.port.readAll()
-        if len(data) > 0:
-            self.received_data.emit(data)
+    def start_reading(self):
+        self.timer = QtCore.QTimer()
+        self.timer.timeout.connect(self.read_data)
+        self.start_time = time()
+        self.timer.start(100)
 
-    # def sendFromPort(self, text):
-    #     self.port.write(text.encode())
-
-    def open(self):
-        if not self.port.open(QtCore.QIODevice.ReadWrite):
-            print('Port open error')
-        else:
-            print('Port opened')
+    def read_data(self):
+        self.ser.write(READCMD_1)
+        t1 = self.ser.read_until(ENDCHAR_BYTES)
+        self.ser.write(READCMD_2)
+        t2 = self.ser.read_until(ENDCHAR_BYTES)
+        tm = time() - self.start_time
+        data = (tm, t1, t2)
+        self.received_data.emit(data)
 
     def close(self):
-        self.port.close()
+        self.timer.stop()
+        self.ser.close()
         print('Port closed')
+
+if __name__ == '__main__':
+    app = QtWidgets.QApplication([])
+    ser = SerialReader()
+    ser.port = 'COM3'
+    ser.received_data.connect(print)
+    ser.start()
+    app.exec()

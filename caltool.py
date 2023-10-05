@@ -115,7 +115,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def table_is_complete(self):
         for row in range(self.tableWidget.rowCount()):
-            for column in range(self.tableWidget.columnCount()):
+            for column in range(self.tableWidget.columnCount()-1):
                 if not self.tableWidget.item(row, column):
                     warning_message('Все ячейки должны быть заполнены!\nЕсли остались неиспользованные строки, то удалите их.')
                     return False
