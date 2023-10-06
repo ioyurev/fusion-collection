@@ -1,4 +1,4 @@
-from PySide6 import QtWidgets, QtUiTools, QtCore
+from PySide6 import QtWidgets, QtUiTools
 from Serial import SerialReader, get_serial_ports
 from Plotter import Plotter, LivePlotWidget
 from DataProcessor import DataProcessor
@@ -10,6 +10,8 @@ Ui_MainWindow, QMainWindow = QtUiTools.loadUiType('MainWindow.ui')
 class MainWindow(QMainWindow, Ui_MainWindow):
     plot_widget_dta: LivePlotWidget
     plot_widget_temp: LivePlotWidget
+    plot_widget_t1: LivePlotWidget
+    plot_widget_t2: LivePlotWidget
     btnOpen: QtWidgets.QPushButton
     btnClose : QtWidgets.QPushButton
     btn_choose_calibration: QtWidgets.QPushButton
@@ -32,7 +34,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.btn_choose_calibration.clicked.connect(self.choose_calibration)
 
         self.serialReader = SerialReader()
-        self.plotter = Plotter(widget_dta=self.plot_widget_dta, widget_temp=self.plot_widget_temp)
+        self.plotter = Plotter(
+            widget_dta=self.plot_widget_dta,
+            widget_temp=self.plot_widget_temp,
+            widget_t1=self.plot_widget_t1,
+            widget_t2=self.plot_widget_t2)
 
         self.serial_is_started = False
         self.calibration_is_set = False
@@ -48,10 +54,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def openPort(self):
         self.serialReader.port = self.combobo_ports.currentText()
-        if self.serialReader.port != '' and self.calibration_is_set:
+        if self.serialReader.port != '' and self.calibration_is_set and self.serial_is_started == False:
             self.data_processor = DataProcessor(
                 curve_dta=self.plotter.plot_curve_dta,
                 curve_temp=self.plotter.plot_curve_temp,
+                curve_t1=self.plotter.plot_curve_t1,
+                curve_t2=self.plotter.plot_curve_t2,
                 coeff_temp=self.coeff_temp)
             self.serialReader.received_data.connect(self.data_processor.process_data)
             self.temp_calc = lambda x: round(self.data_processor.calc_temp(x), 1)
