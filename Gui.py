@@ -8,7 +8,8 @@ import numpy as np
 Ui_MainWindow, QMainWindow = QtUiTools.loadUiType('MainWindow.ui')
 
 class MainWindow(QMainWindow, Ui_MainWindow):
-    plotWidget: LivePlotWidget
+    plot_widget_dta: LivePlotWidget
+    plot_widget_temp: LivePlotWidget
     btnOpen: QtWidgets.QPushButton
     btnClose : QtWidgets.QPushButton
     btn_choose_calibration: QtWidgets.QPushButton
@@ -31,12 +32,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.btn_choose_calibration.clicked.connect(self.choose_calibration)
 
         self.serialReader = SerialReader()
-        self.plotter = Plotter(self.plotWidget)
-        self.data_processor = DataProcessor(curve=self.plotter.plot_curve)
-        self.serialReader.received_data.connect(self.data_processor.process_data)
+        self.plotter = Plotter(widget_dta=self.plot_widget_dta, widget_temp=self.plot_widget_temp)
 
-        self.timer_display = QtCore.QTimer()
-        self.timer_display.timeout.connect(self.update_signals_display)
+        self.serial_is_started = False
+        self.calibration_is_set = False
 
     def choose_calibration(self):
         path = pick_open_path()
@@ -44,18 +43,28 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             df, self.coeff_temp, self.coeff_sens = open_calibration_file(path)
             self.label_cal_temp.setText(f'f(x) = {polyfit_coeff_to_str(self.coeff_temp)}')
             self.label_cal_sens.setText(f'f(x) = {polyfit_coeff_to_str(self.coeff_sens)}')
-            self.temp_calc = np.poly1d(self.coeff_temp)
             self.dta_calc = np.poly1d(self.coeff_sens)
+            self.calibration_is_set = True
 
     def openPort(self):
-        self.plotter.plot_curve.clear()
-        self.data_processor.connector.clear()
         self.serialReader.port = self.combobo_ports.currentText()
-        self.serialReader.start()
-        self.timer_display.start(1000)
+        if self.serialReader.port != '' and self.calibration_is_set:
+            self.data_processor = DataProcessor(
+                curve_dta=self.plotter.plot_curve_dta,
+                curve_temp=self.plotter.plot_curve_temp,
+                coeff_temp=self.coeff_temp)
+            self.serialReader.received_data.connect(self.data_processor.process_data)
+            self.temp_calc = lambda x: round(self.data_processor.calc_temp(x), 1)
+            self.data_processor.current_data_signal.connect(self.update_signals_display)
+            self.plotter.plot_curve_dta.clear()
+            self.data_processor.connector_dta.clear()
+            self.serialReader.start()
+            self.data_processor.timer_current_data.start(1000)
+            self.serial_is_started = True
+            print('Port opened')
     
-    def update_signals_display(self):
-        t1, t2 = self.data_processor.data_point
+    def update_signals_display(self, data: tuple[float, float]):
+        t1, t2 = data
         self.label_t1.setText(str(t1))
         self.label_t2.setText(str(t2))
         self.label_dta_mv.setText(str(round(t2-t1, 3)))
@@ -63,5 +72,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.label_dta_mw.setText(str(round(self.dta_calc(t1), 3)))
 
     def closePort(self):
-        self.serialReader.close()
+        if self.serial_is_started:
+            self.serialReader.close()
+            self.data_processor.timer_current_data.stop()
+            self.serial_is_started = False
+            print('Port closed')
     

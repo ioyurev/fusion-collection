@@ -16,7 +16,7 @@ def get_serial_ports():
 
 class SerialReader(QtCore.QThread):
     received_data = QtCore.Signal(tuple)
-    port: str
+    port: str = ''
 
     def start(self,) -> None:
         result = super().start()
@@ -45,7 +45,6 @@ class SerialReader(QtCore.QThread):
     def close(self):
         self.timer.stop()
         self.ser.close()
-        print('Port closed')
 
 if __name__ == '__main__':
     app = QtWidgets.QApplication([])

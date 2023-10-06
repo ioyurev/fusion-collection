@@ -19,6 +19,8 @@ LW = 3
 pg.setConfigOption('background', 'w')
 pg.setConfigOption('foreground', 'k')
 
+FILE_EXT_FILTER = "Файл калибровки Fusion(*.fus-cal);;All Files (*)"
+
 def polyfit_coeff_to_str(coeff: np.ndarray):
     length = len(coeff)
     last_index = length - 1
@@ -33,10 +35,10 @@ def polyfit_coeff_to_str(coeff: np.ndarray):
     return equation[:-3]
 
 def pick_save_path():
-    return QtWidgets.QFileDialog.getSaveFileName(None, 'Save file')[0]
+    return QtWidgets.QFileDialog.getSaveFileName(None, 'Сохранить файл калибровки', filter=FILE_EXT_FILTER)[0]
 
 def pick_open_path():
-    return QtWidgets.QFileDialog.getOpenFileName(None, 'Open file')[0]
+    return QtWidgets.QFileDialog.getOpenFileName(None, 'Открыть файл калибровки', filter=FILE_EXT_FILTER)[0]
 
 def warning_message(text: str):
     print(f'* Предупреждение. {text}')
@@ -191,8 +193,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             label.setPos(x, y)
             self.plotWidget_sens.addItem(label)
         
+        self.plotWidget_sens.setXRange(25, 1100, padding=0)
         self.plotWidget_sens.plot(Xdata, Ydata, pen=pg.mkPen(color='b', width=LW))
-        
+                
         self.sens_coeff = coeff
         self.label_cal_sens.setText(f'f(x) = {polyfit_coeff_to_str(coeff)}')
 
@@ -215,7 +218,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             label = pg.TextItem(text=self.df[LABEL_SAMPLE][i], color='k')
             label.setPos(x, y)
             self.plotWidget_temp.addItem(label)
-        
+
+        self.plotWidget_temp.setYRange(25, 1100, padding=0)
         self.plotWidget_temp.plot(Xdata, Ydata, pen=pg.mkPen(color='b', width=LW))
 
         self.temp_coeff = coeff
