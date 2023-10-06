@@ -8,10 +8,10 @@ import pyqtgraph as pg
 
 LABEL_SAMPLE = 'Образец'
 LABEL_TEMP = 'Температура, °C'
-LABEL_EMF = 'Сигнал температурной\nтермопары, мВ'
-LABEL_PAREA = 'Площадь пика, мВ*с'
+LABEL_EMF = 'Сигнал температурной\nтермопары, мкВ'
+LABEL_PAREA = 'Площадь пика, мкВ*с'
 LABEL_TEFF = 'Тепловой эффект, Дж/г'
-LABEL_SENS = 'Чувствительность, Дж/(мВ*с*г)'
+LABEL_SENS = 'Чувствительность, Дж/(мкВ*с*г)'
 LABELS = [LABEL_SAMPLE, LABEL_TEMP, LABEL_TEFF, LABEL_EMF, LABEL_PAREA, LABEL_SENS]
 MARKER_SIZE = 5
 LW = 3

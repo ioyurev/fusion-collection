@@ -8,6 +8,7 @@ ENDCHAR = chr(13)
 ENDCHAR_BYTES = bytes(ENDCHAR, 'ascii')
 READCMD_1 = bytes('#01' + ENDCHAR, 'ascii')
 READCMD_2 = bytes('#02' + ENDCHAR, 'ascii')
+READ_INTERVAL = 86
 
 def get_serial_ports():
     ports = serial.tools.list_ports.comports()
@@ -32,7 +33,7 @@ class SerialReader(QtCore.QThread):
         self.timer = QtCore.QTimer()
         self.timer.timeout.connect(self.read_data)
         self.start_time = time()
-        self.timer.start(100)
+        self.timer.start(READ_INTERVAL)
 
     def read_data(self):
         self.ser.write(READCMD_1)
