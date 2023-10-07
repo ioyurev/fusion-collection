@@ -20,14 +20,13 @@ class SerialReader(QtCore.QThread):
     port: str = ''
 
     def start(self,) -> None:
-        result = super().start()
+        super().start()
         self.ser = serial.Serial(port=self.port,
                     baudrate=BAUDRATE,
                     parity=serial.PARITY_ODD,
                     stopbits=serial.STOPBITS_TWO,
                     bytesize=serial.EIGHTBITS)
         self.start_reading()
-        return result
 
     def start_reading(self):
         self.timer = QtCore.QTimer()
@@ -46,6 +45,7 @@ class SerialReader(QtCore.QThread):
     def close(self):
         self.timer.stop()
         self.ser.close()
+        self.quit()
 
 if __name__ == '__main__':
     app = QtWidgets.QApplication([])

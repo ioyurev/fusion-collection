@@ -24,7 +24,6 @@ class Plotter():
         self.p_dta = self.widget_dta.getPlotItem()
         self.p_temp = self.widget_temp.getPlotItem()
 
-
         self.p_t1.setLabel('left', LABEL_T1)
         self.p_t2.setLabel('left', LABEL_T2)
         self.p_dta.setLabel('left', LABEL_EMF, color='#0000ff')

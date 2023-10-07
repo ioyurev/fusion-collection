@@ -6,6 +6,7 @@ from helpers import warning_message
 import zipfile
 from CalibrationFile import Calibration
 import io
+from datetime import datetime
 
 VERSION = 1
 FILE_EXT_FILTER = "Файл измерения Fusion(*.fus-mdt)"
@@ -36,6 +37,9 @@ class Data():
         self.df[HEADER_TIME] = tm_arr
         self.df[HEADER_T1] = t1_arr
         self.df[HEADER_T2] = t2_arr
+        self.info = dict()
+        self.info['version'] = self.version
+        # self.info['time'] = str(datetime.now())
 
     def to_zipbuffer(self):
         buffer_zip = io.BytesIO()
