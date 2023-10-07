@@ -1,25 +1,16 @@
 import sys
 import numpy as np
 from PySide6 import QtWidgets, QtUiTools, QtGui, QtCore
-import zipfile
-import tempfile
 import pandas as pd
 import pyqtgraph as pg
+from helpers import warning_message
+from CalibrationFile import Calibration, file_to_cal, pick_open_path, pick_save_path, LABEL_EMF, LABEL_PAREA, LABEL_SAMPLE, LABEL_SENS, LABEL_TEFF, LABEL_TEMP, LABELS
 
-LABEL_SAMPLE = 'Образец'
-LABEL_TEMP = 'Температура, °C'
-LABEL_EMF = 'Сигнал температурной\nтермопары, мкВ'
-LABEL_PAREA = 'Площадь пика, мкВ*с'
-LABEL_TEFF = 'Тепловой эффект, Дж/г'
-LABEL_SENS = 'Чувствительность, Дж/(мкВ*с*г)'
-LABELS = [LABEL_SAMPLE, LABEL_TEMP, LABEL_TEFF, LABEL_EMF, LABEL_PAREA, LABEL_SENS]
 MARKER_SIZE = 5
 LW = 3
 
 pg.setConfigOption('background', 'w')
 pg.setConfigOption('foreground', 'k')
-
-FILE_EXT_FILTER = "Файл калибровки Fusion(*.fus-cal);;All Files (*)"
 
 def polyfit_coeff_to_str(coeff: np.ndarray):
     length = len(coeff)
@@ -33,23 +24,6 @@ def polyfit_coeff_to_str(coeff: np.ndarray):
             coeff_str += f' * x^{length - i - 1}'
         equation += coeff_str + " + "
     return equation[:-3]
-
-def pick_save_path():
-    return QtWidgets.QFileDialog.getSaveFileName(None, 'Сохранить файл калибровки', filter=FILE_EXT_FILTER)[0]
-
-def pick_open_path():
-    return QtWidgets.QFileDialog.getOpenFileName(None, 'Открыть файл калибровки', filter=FILE_EXT_FILTER)[0]
-
-def warning_message(text: str):
-    print(f'* Предупреждение. {text}')
-    QtWidgets.QMessageBox.warning(None, "Предупреждение", text)
-
-def open_calibration_file(path: str):
-        with zipfile.ZipFile(path, 'r') as zipf:
-            df = pd.read_csv(zipf.open('data.csv'), sep=',', decimal='.', header=None, names=LABELS)
-            coeff_temp = np.loadtxt(zipf.open('coeff_temp.csv'), dtype=float)
-            coenf_sens = np.loadtxt(zipf.open('coeff_sens.csv'), dtype=float)
-        return df, coeff_temp, coenf_sens
 
 Ui_MainWindow, QMainWindow = QtUiTools.loadUiType('caltool.ui')
 
@@ -114,7 +88,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             rows.append(index.row())
         uniqie_rows: list[int] = list(set(rows))
         uniqie_rows.sort(reverse=True)
-        # print(uniqie_rows)
         for row in uniqie_rows:
             self.tableWidget.removeRow(row)
 
@@ -228,40 +201,30 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def new(self):
         self.action_close.setEnabled(True)
         self.action_save.setEnabled(True)
-
         self.set_editor_enabled(True)
         self.clear_figures()
 
     def close(self):
         self.action_close.setEnabled(False)
         self.action_save.setEnabled(False)
-
         self.set_editor_enabled(False)
         self.clear_figures()
 
     def save(self):
         savepath = pick_save_path()
+        if savepath == '':
+            return
         print(f'* Выбран путь для сохранения: {savepath}')
-        if savepath:
-            with tempfile.TemporaryDirectory() as tempdir:
-                print(f'* Создана временная папка для сохранения: {tempdir}')
-                with open(f'{tempdir}/VERSION', 'w') as f:
-                    f.write(str(1))
-                self.df.to_csv(f'{tempdir}/{"data.csv"}', index=False, header=False)
-                np.savetxt(f'{tempdir}/{"coeff_temp.csv"}', self.temp_coeff, delimiter=',')
-                np.savetxt(f'{tempdir}/{"coeff_sens.csv"}', self.sens_coeff, delimiter=',')
-                with zipfile.ZipFile(savepath, 'w', zipfile.ZIP_DEFLATED) as zipf:
-                    zipf.write(f'{tempdir}/VERSION', arcname='VERSION')
-                    zipf.write(f'{tempdir}/{"data.csv"}', arcname='data.csv')
-                    zipf.write(f'{tempdir}/{"coeff_temp.csv"}', arcname='coeff_temp.csv')
-                    zipf.write(f'{tempdir}/{"coeff_sens.csv"}', arcname='coeff_sens.csv')
+        cal = Calibration(self.df, self.temp_coeff, self.sens_coeff)
+        cal.to_file(savepath)
 
     def open(self):
         openpath = pick_open_path()
         print(f"* Выбран файл для открытия: {openpath}")
         if openpath == '':
             return
-        self.df = open_calibration_file(openpath)[0]
+        
+        self.df = file_to_cal(openpath).df
         self.set_editor_enabled(True)
         self.action_close.setEnabled(True)
         self.action_save.setEnabled(True)

@@ -2,8 +2,9 @@ from PySide6 import QtWidgets, QtUiTools
 from Serial import SerialReader, get_serial_ports
 from Plotter import Plotter, LivePlotWidget
 from DataProcessor import DataProcessor
-from Datafile import data_to_file
-from caltool import pick_open_path, open_calibration_file, polyfit_coeff_to_str
+from DataFile import Data, safe_save
+from CalibrationFile import file_to_cal
+from caltool import pick_open_path, polyfit_coeff_to_str
 import numpy as np
 
 Ui_MainWindow, QMainWindow = QtUiTools.loadUiType('MainWindow.ui')
@@ -56,14 +57,16 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     
     def stop_measurement(self):
         self.closePort()
-        data_to_file(self.data_processor)
+        Data(self.data_processor, self.cal).to_file(safe_save())
         self.btn_start_measurement.setEnabled(True)
         self.btn_stop_measurement.setEnabled(False)
 
     def choose_calibration(self):
         path = pick_open_path()
         if path != '':
-            df, self.coeff_temp, self.coeff_sens = open_calibration_file(path)
+            self.cal = file_to_cal(path)
+            self.coeff_temp = self.cal.coeff_temp
+            self.coeff_sens = self.cal.coeff_sens
             self.label_cal_temp.setText(f'f(x) = {polyfit_coeff_to_str(self.coeff_temp)}')
             self.label_cal_sens.setText(f'f(x) = {polyfit_coeff_to_str(self.coeff_sens)}')
             self.dta_calc = np.poly1d(self.coeff_sens)
