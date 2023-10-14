@@ -1,0 +1,3 @@
+[submodule "fusion-calibration-file-module"]
+	path = calibration_file
+	url = https://gitflic.ru/project/i-o-yurev/fusion-calibration-file-module.git

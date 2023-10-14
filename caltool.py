@@ -4,7 +4,7 @@ from PySide6 import QtWidgets, QtUiTools, QtGui, QtCore
 import pandas as pd
 import pyqtgraph as pg
 from helpers import warning_message
-from CalibrationFile import Calibration, file_to_cal, pick_open_path, pick_save_path, LABEL_EMF, LABEL_PAREA, LABEL_SAMPLE, LABEL_SENS, LABEL_TEFF, LABEL_TEMP, LABELS
+from calibration_file.CalibrationFile import Calibration, file_to_cal, pick_open_path, pick_save_path, LABEL_EMF, LABEL_PAREA, LABEL_SAMPLE, LABEL_SENS, LABEL_TEFF, LABEL_TEMP, LABELS
 
 MARKER_SIZE = 5
 LW = 3

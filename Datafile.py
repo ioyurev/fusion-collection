@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 from helpers import warning_message
 import zipfile
-from CalibrationFile import Calibration, file_to_cal
+from calibration_file.CalibrationFile import Calibration, file_to_cal
 import io
 from datetime import datetime
 
