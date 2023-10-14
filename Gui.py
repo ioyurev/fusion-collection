@@ -2,10 +2,20 @@ from PySide6 import QtWidgets, QtUiTools
 from Serial import SerialReader, get_serial_ports
 from Plotter import Plotter, LivePlotWidget
 from DataProcessor import DataProcessor
-from DataFile import Data, safe_save
-from CalibrationFile import file_to_cal
+from data_file.DataFile import Data, pick_save_path
+from calibration_file.CalibrationFile import file_to_cal
 from caltool import pick_open_path, polyfit_coeff_to_str
+from helpers import warning_message
 import numpy as np
+
+def safe_save():
+    while True:
+        path = pick_save_path()
+        if path:
+            break
+        else:
+            warning_message('Необходимо выбрать путь для сохранения измерения.')
+    return path
 
 Ui_MainWindow, QMainWindow = QtUiTools.loadUiType('MainWindow.ui')
 

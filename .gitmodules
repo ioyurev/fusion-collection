@@ -1,3 +1,6 @@
 [submodule "fusion-calibration-file-module"]
 	path = calibration_file
 	url = https://gitflic.ru/project/i-o-yurev/fusion-calibration-file-module.git
+[submodule "fusion-data-file-module"]
+	path = data_file
+	url = https://gitflic.ru/project/i-o-yurev/fusion-data-file-module.git
