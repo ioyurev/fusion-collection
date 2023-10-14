@@ -57,7 +57,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     
     def stop_measurement(self):
         self.closePort()
-        Data(self.data_processor, self.cal).to_file(safe_save())
+        tm_arr = self.data_processor.time_array
+        t1_arr = self.data_processor.t1_array
+        t2_arr = self.data_processor.t2_array
+        Data(tm_arr, t1_arr, t2_arr, self.cal).to_file(safe_save())
         self.btn_start_measurement.setEnabled(True)
         self.btn_stop_measurement.setEnabled(False)
 
