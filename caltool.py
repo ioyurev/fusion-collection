@@ -1,10 +1,11 @@
 import sys
 import numpy as np
-from PySide6 import QtWidgets, QtUiTools, QtGui, QtCore
+from PySide6 import QtWidgets, QtGui, QtCore
 import pandas as pd
 import pyqtgraph as pg
 from helpers import warning_message
 from calibration_file.CalibrationFile import Calibration, file_to_cal, pick_open_path, pick_save_path, LABEL_EMF, LABEL_PAREA, LABEL_SAMPLE, LABEL_SENS, LABEL_TEFF, LABEL_TEMP, LABELS
+from ui.CalToolWindow import Ui_MainWindow
 
 MARKER_SIZE = 5
 LW = 3
@@ -25,22 +26,7 @@ def polyfit_coeff_to_str(coeff: np.ndarray):
         equation += coeff_str + " + "
     return equation[:-3]
 
-Ui_MainWindow, QMainWindow = QtUiTools.loadUiType('caltool.ui')
-
-class MainWindow(QMainWindow, Ui_MainWindow):
-    tableWidget: QtWidgets.QTableWidget
-    plotLayout: QtWidgets.QHBoxLayout
-    btn_do_cal: QtWidgets.QPushButton
-    btn_add_row: QtWidgets.QPushButton
-    btn_del_row: QtWidgets.QPushButton
-    action_save: QtGui.QAction
-    action_save_as: QtGui.QAction
-    action_open: QtGui.QAction
-    action_new: QtGui.QAction
-    action_close: QtGui.QAction
-    label_cal_temp: QtWidgets.QLabel
-    label_cal_sens: QtWidgets.QLabel
-
+class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def __init__(self):
         super().__init__()
         self.setupUi(self)

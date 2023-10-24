@@ -1,12 +1,13 @@
-from PySide6 import QtWidgets, QtUiTools
+from PySide6 import QtWidgets, QtGui
 from Serial import SerialReader, get_serial_ports
-from Plotter import Plotter, LivePlotWidget
+from Plotter import Plotter
 from DataProcessor import DataProcessor
 from data_file.DataFile import Data, pick_save_path
 from calibration_file.CalibrationFile import file_to_cal
 from caltool import pick_open_path, polyfit_coeff_to_str
 from helpers import warning_message
 import numpy as np
+from ui.MainWindow import Ui_MainWindow
 
 def safe_save():
     while True:
@@ -17,30 +18,12 @@ def safe_save():
             warning_message('Необходимо выбрать путь для сохранения измерения.')
     return path
 
-Ui_MainWindow, QMainWindow = QtUiTools.loadUiType('MainWindow.ui')
-
-class MainWindow(QMainWindow, Ui_MainWindow):
-    plot_widget_dta: LivePlotWidget
-    plot_widget_temp: LivePlotWidget
-    plot_widget_t1: LivePlotWidget
-    plot_widget_t2: LivePlotWidget
-    btnOpen: QtWidgets.QPushButton
-    btnClose : QtWidgets.QPushButton
-    btn_choose_calibration: QtWidgets.QPushButton
-    btn_start_measurement: QtWidgets.QPushButton
-    btn_stop_measurement: QtWidgets.QPushButton
-    combobo_ports : QtWidgets.QComboBox
-    label_t1: QtWidgets.QLabel
-    label_t2: QtWidgets.QLabel
-    label_dta_mcv: QtWidgets.QLabel
-    label_dta_mw: QtWidgets.QLabel
-    label_temp: QtWidgets.QLabel
-    label_cal_temp: QtWidgets.QLabel
-    label_cal_sens: QtWidgets.QLabel
+class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def __init__(self):
         super().__init__()
         self.setupUi(self)
+        self.setWindowIcon(QtGui.QIcon(":/icon.png"))
         self.combobo_ports.addItems(get_serial_ports())
 
         self.btnOpen.clicked.connect(self.openPort)

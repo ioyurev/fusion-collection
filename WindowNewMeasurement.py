@@ -1,0 +1,1 @@
+from ui.WindowNewMeasurement import Ui_MainWindow
