@@ -8,6 +8,8 @@ from caltool import pick_open_path, polyfit_coeff_to_str
 from helpers import warning_message
 import numpy as np
 from ui.MainWindow import Ui_MainWindow
+from AboutWindow import show_about
+import resources_rc
 
 def safe_save():
     while True:
@@ -25,6 +27,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.setupUi(self)
         self.setWindowIcon(QtGui.QIcon(":/icon.png"))
         self.combobo_ports.addItems(get_serial_ports())
+
+        self.action_about.triggered.connect(show_about)
 
         self.btnOpen.clicked.connect(self.openPort)
         self.btnClose.clicked.connect(self.closePort)
