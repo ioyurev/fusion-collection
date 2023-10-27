@@ -1,6 +1,6 @@
 import sys
 import numpy as np
-from PySide6 import QtWidgets, QtGui, QtCore
+from PySide6 import QtWidgets, QtCore, QtGui
 import pandas as pd
 import pyqtgraph as pg
 from helpers import warning_message
@@ -30,7 +30,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
-        # self.showMaximized()
+        self.setWindowIcon(QtGui.QIcon(":/calibration_icon.png"))
 
         self.tableWidget.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents)
         self.tableWidget.horizontalHeader().setStretchLastSection(True)

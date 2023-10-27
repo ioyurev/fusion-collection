@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>Сбор данных</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout_2" rowstretch="1,1,1,0,0,0" columnstretch="0,0,1,1">
@@ -275,6 +275,7 @@
     <property name="title">
      <string>Меню</string>
     </property>
+    <addaction name="action_calibration"/>
     <addaction name="action_about"/>
    </widget>
    <addaction name="menu"/>
@@ -283,6 +284,11 @@
   <action name="action_about">
    <property name="text">
     <string>О программе</string>
+   </property>
+  </action>
+  <action name="action_calibration">
+   <property name="text">
+    <string>Калибровка</string>
    </property>
   </action>
  </widget>
@@ -294,6 +300,8 @@
    <container>1</container>
   </customwidget>
  </customwidgets>
- <resources/>
+ <resources>
+  <include location="../../assets/resources.qrc"/>
+ </resources>
  <connections/>
 </ui>

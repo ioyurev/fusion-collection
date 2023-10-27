@@ -5,6 +5,7 @@ from DataProcessor import DataProcessor
 from data_file.DataFile import Data, pick_save_path
 from calibration_file.CalibrationFile import file_to_cal
 from caltool import pick_open_path, polyfit_coeff_to_str
+from caltool import MainWindow as CaltoolWindow
 from helpers import warning_message
 import numpy as np
 from ui.MainWindow import Ui_MainWindow
@@ -21,13 +22,13 @@ def safe_save():
     return path
 
 class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
-
     def __init__(self):
         super().__init__()
         self.setupUi(self)
         self.setWindowIcon(QtGui.QIcon(":/icon.png"))
         self.combobo_ports.addItems(get_serial_ports())
 
+        self.action_calibration.triggered.connect(self.run_caltool)
         self.action_about.triggered.connect(show_about)
 
         self.btnOpen.clicked.connect(self.openPort)
@@ -110,3 +111,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             self.serial_is_started = False
             print('Port closed')
     
+    def run_caltool(self):
+        self.caltool_w = CaltoolWindow()
+        self.caltool_w.show()
