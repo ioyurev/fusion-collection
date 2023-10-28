@@ -3,7 +3,7 @@ import numpy as np
 from PySide6 import QtWidgets, QtCore, QtGui
 import pandas as pd
 import pyqtgraph as pg
-from helpers import warning_message
+from helpers import warning_message, log_warning, log_info
 from calibration_file.CalibrationFile import Calibration, file_to_cal, pick_open_path, pick_save_path, LABEL_EMF, LABEL_PAREA, LABEL_SAMPLE, LABEL_SENS, LABEL_TEFF, LABEL_TEMP, LABELS
 from ui.CalToolWindow import Ui_MainWindow
 
@@ -94,7 +94,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         data = (name, temperature, thermal_effect, emf_signal, peak_area)
         for el in data:
             if el is None:
-                print('* Один из стоблцов не заполнен или заполнен неправильно')
+                log_warning('Один из стоблцов не заполнен или заполнен неправильно')
                 return None
         else:
             df = pd.DataFrame()
@@ -200,13 +200,13 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         savepath = pick_save_path()
         if savepath == '':
             return
-        print(f'* Выбран путь для сохранения: {savepath}')
+        log_info(f'Выбран путь для сохранения: {savepath}')
         cal = Calibration(self.df, self.temp_coeff, self.sens_coeff)
         cal.to_file(savepath)
 
     def open(self):
         openpath = pick_open_path()
-        print(f"* Выбран файл для открытия: {openpath}")
+        log_info(f"Выбран файл для открытия: {openpath}")
         if openpath == '':
             return
         

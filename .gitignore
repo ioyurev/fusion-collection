@@ -4,3 +4,4 @@ resources_rc.py
 ui/*.py
 pyinstaller
 test.py
+logs

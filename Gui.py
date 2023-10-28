@@ -6,7 +6,7 @@ from data_file.DataFile import Data, pick_save_path
 from calibration_file.CalibrationFile import file_to_cal
 from caltool import pick_open_path, polyfit_coeff_to_str
 from caltool import MainWindow as CaltoolWindow
-from helpers import warning_message
+from helpers import warning_message, error_message, log_info, log_warning
 import numpy as np
 from ui.MainWindow import Ui_MainWindow
 from AboutWindow import show_about
@@ -25,8 +25,9 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     coeff_temp = None
     cal = None
     
-    def __init__(self):
+    def __init__(self, log_path: str):
         super().__init__()
+        self.log_path = log_path
         self.setupUi(self)
         self.setWindowIcon(QtGui.QIcon(":/icon.png"))
         self.combobo_ports.addItems(get_serial_ports())
@@ -50,6 +51,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.calibration_is_set = False
 
     def start_measurement(self):
+        log_info('Попытка запуска измерения.')
         self.closePort()
         if self.openPort():
             self.btn_start_measurement.setEnabled(False)
@@ -101,12 +103,17 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             self.data_processor.current_data_signal.connect(self.update_signals_display)
             self.plotter.plot_curve_dta.clear()
             self.data_processor.connector_dta.clear()
-            self.serialReader.start()
-            self.data_processor.timer_current_data.start(1000)
-            self.serial_is_started = True
-            print('Port opened')
-            return True
+            if self.serialReader.start():
+                self.data_processor.timer_current_data.start(1000)
+                self.serial_is_started = True
+                log_info('Порт открыт.')
+                return True
+            else:
+                self.closePort()
+                error_message(f'Не удалось запустить измерение.\nПодробности в журнале сообщений:\n{self.log_path}')
         else:
+            log_warning('Устройство не обнаружно.')
+            warning_message('Устройство не обнаружно.\nПодключите устройство и перезапустите программу.')
             return False
     
     def update_signals_display(self, data: tuple[float, float]):
@@ -123,7 +130,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             self.serialReader.close()
             self.data_processor.timer_current_data.stop()
             self.serial_is_started = False
-            print('Port closed')
+            log_info('Порт закрыт.')
     
     def run_caltool(self):
         self.caltool_w = CaltoolWindow()
