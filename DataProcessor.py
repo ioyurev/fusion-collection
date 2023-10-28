@@ -28,8 +28,8 @@ class DataProcessor(QtCore.QObject):
 
     def process_data(self, data: tuple[float, bytes, bytes]):
         tm = round(data[0], 3)
-        t1 = float(data[1].decode('utf-8').strip()[1:])
-        t2 = float(data[2].decode('utf-8').strip()[1:])
+        t1 = float(data[1].decode('utf-8').strip()[4:])
+        t2 = float(data[2].decode('utf-8').strip()[4:])
         if self.calibration_is_set:
             self.time_array.append(tm)
             self.t1_array.append(t1)

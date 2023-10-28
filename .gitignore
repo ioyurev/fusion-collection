@@ -3,3 +3,4 @@ test_data
 resources_rc.py
 ui/*.py
 pyinstaller
+test.py

@@ -6,8 +6,9 @@ import serial.tools.list_ports
 BAUDRATE = 9600
 ENDCHAR = chr(13)
 ENDCHAR_BYTES = bytes(ENDCHAR, 'ascii')
-READCMD_1 = bytes('#01' + ENDCHAR, 'ascii')
-READCMD_2 = bytes('#02' + ENDCHAR, 'ascii')
+SAMPLE_SYNC = bytes('#**' + ENDCHAR, 'ascii')
+READCMD_1 = bytes('$014' + ENDCHAR, 'ascii')
+READCMD_2 = bytes('$024' + ENDCHAR, 'ascii')
 READ_INTERVAL = 86
 
 def get_serial_ports():
@@ -35,6 +36,7 @@ class SerialReader(QtCore.QThread):
         self.timer.start(READ_INTERVAL)
 
     def read_data(self):
+        self.ser.write(SAMPLE_SYNC)
         self.ser.write(READCMD_1)
         t1 = self.ser.read_until(ENDCHAR_BYTES)
         self.ser.write(READCMD_2)
