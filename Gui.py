@@ -11,19 +11,21 @@ import numpy as np
 from ui.MainWindow import Ui_MainWindow
 from AboutWindow import show_about
 
+
 def safe_save():
     while True:
         path = pick_save_path()
         if path:
             break
         else:
-            warning_message('Необходимо выбрать путь для сохранения измерения.')
+            warning_message("Необходимо выбрать путь для сохранения измерения.")
     return path
+
 
 class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     coeff_temp = None
     cal = None
-    
+
     def __init__(self, log_path: str):
         super().__init__()
         self.log_path = log_path
@@ -44,18 +46,19 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             widget_dta=self.plot_widget_dta,
             widget_temp=self.plot_widget_temp,
             widget_t1=self.plot_widget_t1,
-            widget_t2=self.plot_widget_t2)
+            widget_t2=self.plot_widget_t2,
+        )
 
         self.serial_is_started = False
         self.calibration_is_set = False
 
     def start_measurement(self):
-        log_info('Попытка запуска измерения.')
+        log_info("Попытка запуска измерения.")
         self.closePort()
         if self.openPort():
             self.btn_start_measurement.setEnabled(False)
             self.btn_stop_measurement.setEnabled(True)
-    
+
     def stop_measurement(self):
         self.closePort()
         tm_arr = self.data_processor.time_array
@@ -67,36 +70,41 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def choose_calibration(self):
         path = pick_open_path()
-        if path != '':
+        if path != "":
             self.cal = file_to_cal(path)
             self.coeff_temp = self.cal.coeff_temp
             self.coeff_sens = self.cal.coeff_sens
-            self.label_cal_temp.setText(f'f(x) = {polyfit_coeff_to_str(self.coeff_temp)}')
-            self.label_cal_sens.setText(f'f(x) = {polyfit_coeff_to_str(self.coeff_sens)}')
+            self.label_cal_temp.setText(
+                f"f(x) = {polyfit_coeff_to_str(self.coeff_temp)}"
+            )
+            self.label_cal_sens.setText(
+                f"f(x) = {polyfit_coeff_to_str(self.coeff_sens)}"
+            )
             self.dta_calc = np.poly1d(self.coeff_sens)
             self.calibration_is_set = True
             self.btn_remove_calibration.setEnabled(True)
 
-    def remove_calibration(self):      
+    def remove_calibration(self):
         self.cal = None
         self.coeff_temp = None
         self.coeff_sens = None
-        self.label_cal_temp.setText('')
-        self.label_cal_sens.setText('')
+        self.label_cal_temp.setText("")
+        self.label_cal_sens.setText("")
         self.dta_calc = None
         self.calibration_is_set = False
         self.btn_remove_calibration.setEnabled(False)
 
     def openPort(self):
         self.serialReader.port = self.combobo_ports.currentText()
-        if self.serialReader.port != '' and self.serial_is_started is False:
+        if self.serialReader.port != "" and self.serial_is_started is False:
             self.data_processor = DataProcessor(
                 curve_dta=self.plotter.plot_curve_dta,
                 curve_temp=self.plotter.plot_curve_temp,
                 curve_t1=self.plotter.plot_curve_t1,
                 curve_t2=self.plotter.plot_curve_t2,
                 coeff_temp=self.coeff_temp,
-                calibration_is_set=self.calibration_is_set)
+                calibration_is_set=self.calibration_is_set,
+            )
             self.serialReader.received_data.connect(self.data_processor.process_data)
             self.temp_calc = lambda x: round(self.data_processor.calc_temp(x), 1)
             self.data_processor.current_data_signal.connect(self.update_signals_display)
@@ -104,25 +112,29 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                 self.plotter.plot_curve_dta.clear()
                 self.data_processor.connector_dta.clear()
             except Exception as e:
-                log_warning(f'Не удалось очистить график: {e}')
+                log_warning(f"Не удалось очистить график: {e}")
             if self.serialReader.start():
                 self.data_processor.timer_current_data.start(1000)
                 self.serial_is_started = True
-                log_info('Порт открыт.')
+                log_info("Порт открыт.")
                 return True
             else:
                 self.closePort()
-                error_message(f'Не удалось запустить измерение.\nПодробности в журнале сообщений:\n{self.log_path}')
+                error_message(
+                    f"Не удалось запустить измерение.\nПодробности в журнале сообщений:\n{self.log_path}"
+                )
         else:
-            log_warning('Устройство не обнаружно.')
-            warning_message('Устройство не обнаружно.\nПодключите устройство и перезапустите программу.')
+            log_warning("Устройство не обнаружно.")
+            warning_message(
+                "Устройство не обнаружно.\nПодключите устройство и перезапустите программу."
+            )
             return False
-    
+
     def update_signals_display(self, data: tuple[float, float]):
         t1, t2 = data
         self.label_t1.setText(str(t1))
         self.label_t2.setText(str(t2))
-        self.label_dta_mcv.setText(str(round(t2-t1, 3)))
+        self.label_dta_mcv.setText(str(round(t2 - t1, 3)))
         if self.calibration_is_set:
             self.label_temp.setText(str(round(self.temp_calc(t1), 3)))
             self.label_dta_mw.setText(str(round(self.dta_calc(t1), 3)))
@@ -132,8 +144,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             self.serialReader.close()
             self.data_processor.timer_current_data.stop()
             self.serial_is_started = False
-            log_info('Порт закрыт.')
-    
+            log_info("Порт закрыт.")
+
     def run_caltool(self):
         self.caltool_w = CaltoolWindow()
         self.caltool_w.show()

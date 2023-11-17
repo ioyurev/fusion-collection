@@ -4,27 +4,41 @@ from PySide6 import QtWidgets, QtCore, QtGui
 import pandas as pd
 import pyqtgraph as pg
 from helpers import warning_message, log_warning, log_info
-from calibration_file.CalibrationFile import Calibration, file_to_cal, pick_open_path, pick_save_path, LABEL_EMF, LABEL_PAREA, LABEL_SAMPLE, LABEL_SENS, LABEL_TEFF, LABEL_TEMP, LABELS
 from ui.CalToolWindow import Ui_MainWindow
+from calibration_file.CalibrationFile import (
+    Calibration,
+    file_to_cal,
+    pick_open_path,
+    pick_save_path,
+    LABEL_EMF,
+    LABEL_PAREA,
+    LABEL_SAMPLE,
+    LABEL_SENS,
+    LABEL_TEFF,
+    LABEL_TEMP,
+    LABELS,
+)
 
 MARKER_SIZE = 5
 LW = 3
 
-pg.setConfigOption('background', 'w')
-pg.setConfigOption('foreground', 'k')
+pg.setConfigOption("background", "w")
+pg.setConfigOption("foreground", "k")
+
 
 def polyfit_coeff_to_str(coeff: np.ndarray):
     length = len(coeff)
     last_index = length - 1
-    equation = ''
+    equation = ""
     for i, value in enumerate(coeff):
         coeff_str = f'{"{:.3e}".format(value)}'
-        if i  == last_index:
+        if i == last_index:
             pass
         else:
-            coeff_str += f' * x^{length - i - 1}'
+            coeff_str += f" * x^{length - i - 1}"
         equation += coeff_str + " + "
     return equation[:-3]
+
 
 class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def __init__(self):
@@ -32,7 +46,9 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.setupUi(self)
         self.setWindowIcon(QtGui.QIcon(":/calibration_icon.png"))
 
-        self.tableWidget.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents)
+        self.tableWidget.horizontalHeader().setSectionResizeMode(
+            QtWidgets.QHeaderView.ResizeToContents
+        )
         self.tableWidget.horizontalHeader().setStretchLastSection(True)
 
         self.action_new.triggered.connect(self.new)
@@ -48,10 +64,10 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.plotWidget_sens = pg.plot()
         self.plotWidget_temp.setTitle("Калибровка температуры")
         self.plotWidget_sens.setTitle("Калибровка чувственности")
-        self.plotWidget_temp.getPlotItem().setLabel('bottom', LABEL_EMF)
-        self.plotWidget_temp.getPlotItem().setLabel('left', LABEL_TEMP)
-        self.plotWidget_sens.getPlotItem().setLabel('bottom', LABEL_TEMP)
-        self.plotWidget_sens.getPlotItem().setLabel('left', LABEL_SENS)
+        self.plotWidget_temp.getPlotItem().setLabel("bottom", LABEL_EMF)
+        self.plotWidget_temp.getPlotItem().setLabel("left", LABEL_TEMP)
+        self.plotWidget_sens.getPlotItem().setLabel("bottom", LABEL_TEMP)
+        self.plotWidget_sens.getPlotItem().setLabel("left", LABEL_SENS)
         self.plotLayout.addWidget(self.plotWidget_temp)
         self.plotLayout.addWidget(self.plotWidget_sens)
         self.redraw_figures()
@@ -79,9 +95,11 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def table_is_complete(self):
         for row in range(self.tableWidget.rowCount()):
-            for column in range(self.tableWidget.columnCount()-1):
+            for column in range(self.tableWidget.columnCount() - 1):
                 if not self.tableWidget.item(row, column):
-                    warning_message('Все ячейки должны быть заполнены!\nЕсли остались неиспользованные строки, то удалите их.')
+                    warning_message(
+                        "Все ячейки должны быть заполнены!\nЕсли остались неиспользованные строки, то удалите их."
+                    )
                     return False
         return True
 
@@ -94,7 +112,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         data = (name, temperature, thermal_effect, emf_signal, peak_area)
         for el in data:
             if el is None:
-                log_warning('Один из стоблцов не заполнен или заполнен неправильно')
+                log_warning("Один из стоблцов не заполнен или заполнен неправильно")
                 return None
         else:
             df = pd.DataFrame()
@@ -107,13 +125,15 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         for row in range(self.tableWidget.rowCount()):
             lst.append(self.tableWidget.item(row, num).text())
         if is_numerical:
-            dtype=float
+            dtype = float
         else:
-            dtype=str
+            dtype = str
         try:
             return np.array(lst, dtype=dtype)
         except Exception as e:
-            warning_message(f'В столбце "{self.tableWidget.horizontalHeaderItem(num).text()}" могут быть только числовые значения!\n{e}')
+            warning_message(
+                f'В столбце "{self.tableWidget.horizontalHeaderItem(num).text()}" могут быть только числовые значения!\n{e}'
+            )
             return None
 
     def do_calibration(self):
@@ -144,19 +164,25 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         Xdata = np.linspace(xdata[0], xdata[-1], 100)
         Ydata = yn(Xdata)
 
-        scatter = pg.ScatterPlotItem(x=xdata, y=ydata, pen=pg.mkPen(None), brush=pg.mkBrush('r'), size=MARKER_SIZE)
+        scatter = pg.ScatterPlotItem(
+            x=xdata,
+            y=ydata,
+            pen=pg.mkPen(None),
+            brush=pg.mkBrush("r"),
+            size=MARKER_SIZE,
+        )
         self.plotWidget_sens.addItem(scatter)
 
         for i, (x, y) in enumerate(zip(xdata, ydata)):
-            label = pg.TextItem(text=self.df[LABEL_SAMPLE][i], color='k')
+            label = pg.TextItem(text=self.df[LABEL_SAMPLE][i], color="k")
             label.setPos(x, y)
             self.plotWidget_sens.addItem(label)
-        
+
         self.plotWidget_sens.setXRange(25, 1100, padding=0)
-        self.plotWidget_sens.plot(Xdata, Ydata, pen=pg.mkPen(color='b', width=LW))
-                
+        self.plotWidget_sens.plot(Xdata, Ydata, pen=pg.mkPen(color="b", width=LW))
+
         self.sens_coeff = coeff
-        self.label_cal_sens.setText(f'f(x) = {polyfit_coeff_to_str(coeff)}')
+        self.label_cal_sens.setText(f"f(x) = {polyfit_coeff_to_str(coeff)}")
 
     def calibration_temp(self):
         df = pd.DataFrame()
@@ -169,20 +195,26 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         yn = np.poly1d(coeff)
         Xdata = np.linspace(xdata[0], xdata[-1], 100)
         Ydata = yn(Xdata)
-        
-        scatter = pg.ScatterPlotItem(x=xdata, y=ydata, pen=pg.mkPen(None), brush=pg.mkBrush('r'), size=MARKER_SIZE)
+
+        scatter = pg.ScatterPlotItem(
+            x=xdata,
+            y=ydata,
+            pen=pg.mkPen(None),
+            brush=pg.mkBrush("r"),
+            size=MARKER_SIZE,
+        )
         self.plotWidget_temp.addItem(scatter)
 
         for i, (x, y) in enumerate(zip(xdata, ydata)):
-            label = pg.TextItem(text=self.df[LABEL_SAMPLE][i], color='k')
+            label = pg.TextItem(text=self.df[LABEL_SAMPLE][i], color="k")
             label.setPos(x, y)
             self.plotWidget_temp.addItem(label)
 
         self.plotWidget_temp.setYRange(25, 1100, padding=0)
-        self.plotWidget_temp.plot(Xdata, Ydata, pen=pg.mkPen(color='b', width=LW))
+        self.plotWidget_temp.plot(Xdata, Ydata, pen=pg.mkPen(color="b", width=LW))
 
         self.temp_coeff = coeff
-        self.label_cal_temp.setText(f'f(x) = {polyfit_coeff_to_str(coeff)}')
+        self.label_cal_temp.setText(f"f(x) = {polyfit_coeff_to_str(coeff)}")
 
     def new(self):
         self.action_close.setEnabled(True)
@@ -198,18 +230,18 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def save(self):
         savepath = pick_save_path()
-        if savepath == '':
+        if savepath == "":
             return
-        log_info(f'Выбран путь для сохранения: {savepath}')
+        log_info(f"Выбран путь для сохранения: {savepath}")
         cal = Calibration(self.df, self.temp_coeff, self.sens_coeff)
         cal.to_file(savepath)
 
     def open(self):
         openpath = pick_open_path()
         log_info(f"Выбран файл для открытия: {openpath}")
-        if openpath == '':
+        if openpath == "":
             return
-        
+
         self.df = file_to_cal(openpath).df
         self.set_editor_enabled(True)
         self.action_close.setEnabled(True)
@@ -253,9 +285,10 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         else:
             self.clear_table()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
-    app.setStyle('Fusion')
+    app.setStyle("Fusion")
     window = MainWindow()
     window.show()
     sys.exit(app.exec())

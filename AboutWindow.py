@@ -15,6 +15,7 @@ i.o.yurev@yandex.ru<br>
 <a href=\"https://www.flaticon.com/free-icons/settings\">Settings icons created by dmitri13 - Flaticon</a><br>
 """
 
+
 class AboutWindow(QtWidgets.QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -22,7 +23,11 @@ class AboutWindow(QtWidgets.QDialog):
         self.setWindowIcon(QtGui.QIcon(":/icon.png"))
         layout = QtWidgets.QVBoxLayout()
         label_icon = QtWidgets.QLabel()
-        label_icon.setPixmap(QtGui.QPixmap(":/icon.png").scaled(128, 128, mode=QtCore.Qt.SmoothTransformation))
+        label_icon.setPixmap(
+            QtGui.QPixmap(":/icon.png").scaled(
+                128, 128, mode=QtCore.Qt.SmoothTransformation
+            )
+        )
         layout.addWidget(label_icon)
         label_text = QtWidgets.QLabel()
         label_text.setTextFormat(QtCore.Qt.RichText)
@@ -33,10 +38,12 @@ class AboutWindow(QtWidgets.QDialog):
         self.adjustSize()
         self.setFixedSize(self.size())
 
+
 def show_about():
     AboutWindow().exec()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     app = QtWidgets.QApplication()
     show_about()
     app.exec()
