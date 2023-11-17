@@ -113,7 +113,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                 self.data_processor.connector_dta.clear()
             except Exception as e:
                 log_warning(f"Не удалось очистить график: {e}")
-            if self.serialReader.start():
+            if self.serialReader.start_thread():
                 self.data_processor.timer_current_data.start(1000)
                 self.serial_is_started = True
                 log_info("Порт открыт.")

@@ -5,3 +5,6 @@ ui/*.py
 pyinstaller
 test.py
 logs
+.mypy_cache
+.ruff_cache
+.venv

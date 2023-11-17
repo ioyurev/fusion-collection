@@ -14,7 +14,7 @@ class FunctionExecutor(Thread):
         self.result = self.f()
 
 
-def check_function_timeout(f: Callable, t: int) -> bool:
+def check_function_timeout(f: Callable, t: int) -> tuple:
     thread = FunctionExecutor(f)
     thread.start()
     thread.join(timeout=t)
@@ -42,7 +42,7 @@ def log_info(message: str):
 
 def error_message(message):
     print(f"* Вывод окна об ошибке.\n{message}")
-    QtWidgets.QMessageBox.critical(None, "Ошибка", message)
+    QtWidgets.QMessageBox.critical(parent=None, title="Ошибка", text=message)
 
 
 def warning_message(message):

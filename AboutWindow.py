@@ -25,12 +25,12 @@ class AboutWindow(QtWidgets.QDialog):
         label_icon = QtWidgets.QLabel()
         label_icon.setPixmap(
             QtGui.QPixmap(":/icon.png").scaled(
-                128, 128, mode=QtCore.Qt.SmoothTransformation
+                128, 128, mode=QtCore.Qt.TransformationMode.SmoothTransformation
             )
         )
         layout.addWidget(label_icon)
         label_text = QtWidgets.QLabel()
-        label_text.setTextFormat(QtCore.Qt.RichText)
+        label_text.setTextFormat(QtCore.Qt.TextFormat.RichText)
         label_text.setText(TEXT)
         label_text.setOpenExternalLinks(True)
         layout.addWidget(label_text)

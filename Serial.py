@@ -25,9 +25,9 @@ class SerialReader(QtCore.QThread):
     received_data = QtCore.Signal(tuple)
     port: str = ""
 
-    def start(
+    def start_thread(
         self,
-    ) -> None:
+    ) -> bool:
         super().start()
         try:
             self.ser = serial.Serial(
@@ -73,12 +73,15 @@ class SerialReader(QtCore.QThread):
         try:
             self.ser.write(MODULE1_NAME)
             answer1 = self.ser.read_until(ENDCHAR_BYTES)
-            log_info(f"Ответ на вызов модуля 1: {answer1}")
+            log_info(f"Ответ на вызов модуля 1: {answer1!r}")
             self.ser.write(MODULE2_NAME)
             answer2 = self.ser.read_until(ENDCHAR_BYTES)
-            log_info(f"Ответ на вызов модуля 2: {answer2}")
+            log_info(f"Ответ на вызов модуля 2: {answer2!r}")
             if answer1 == b"!014011\r" and answer2 == b"!024011\r":
                 return True
+            else:
+                log_critical("Неожиданные ответы модулей. Вероятно, установленные неправильные модули ")
+                return False
         except serial.SerialTimeoutException as e:
             log_critical(f"Таймаут при попытке вывода в порт: {e}")
             return False
@@ -124,5 +127,5 @@ if __name__ == "__main__":
     ser = SerialReader()
     ser.port = "COM3"
     ser.received_data.connect(print)
-    ser.start()
+    ser.start_thread()
     app.exec()

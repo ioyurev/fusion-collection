@@ -10,7 +10,7 @@ PLOT_RATE = 1
 
 class DataProcessor(QtCore.QObject):
     current_data_signal = QtCore.Signal(tuple)
-    data_point = (0, 0)
+    data_point = (0.0, 0.0)
 
     def __init__(
         self,
@@ -23,9 +23,9 @@ class DataProcessor(QtCore.QObject):
     ) -> None:
         super().__init__()
         self.calibration_is_set = calibration_is_set
-        self.time_array = []
-        self.t1_array = []
-        self.t2_array = []
+        self.time_array: list[float] = []
+        self.t1_array: list[float] = []
+        self.t2_array: list[float] = []
         self.connector_t1 = DataConnector(
             curve_t1,
             max_points=MAX_POINTS,

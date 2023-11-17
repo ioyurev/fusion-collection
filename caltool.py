@@ -1,4 +1,5 @@
 import sys
+from typing import Type
 import numpy as np
 from PySide6 import QtWidgets, QtCore, QtGui
 import pandas as pd
@@ -47,7 +48,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.setWindowIcon(QtGui.QIcon(":/calibration_icon.png"))
 
         self.tableWidget.horizontalHeader().setSectionResizeMode(
-            QtWidgets.QHeaderView.ResizeToContents
+            QtWidgets.QHeaderView.ResizeMode.ResizeToContents
         )
         self.tableWidget.horizontalHeader().setStretchLastSection(True)
 
@@ -125,11 +126,11 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         for row in range(self.tableWidget.rowCount()):
             lst.append(self.tableWidget.item(row, num).text())
         if is_numerical:
-            dtype = float
+            dtype = "float"
         else:
-            dtype = str
+            dtype = "str"
         try:
-            return np.array(lst, dtype=dtype)
+            return np.array(lst, dtype=np.dtype(dtype))
         except Exception as e:
             warning_message(
                 f'В столбце "{self.tableWidget.horizontalHeaderItem(num).text()}" могут быть только числовые значения!\n{e}'
@@ -151,7 +152,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         column_index = len(LABELS) - 1
         for row, value in enumerate(self.df[LABEL_SENS].to_list()):
             item = QtWidgets.QTableWidgetItem(str(value))
-            item.setFlags(item.flags() & ~QtCore.Qt.ItemIsEditable)
+            item.setFlags(item.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
             self.tableWidget.setItem(row, column_index, item)
 
         df[LABEL_TEMP] = self.df[LABEL_TEMP]
@@ -267,7 +268,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         column_index = len(LABELS) - 1
         for row in range(self.tableWidget.rowCount()):
             item = QtWidgets.QTableWidgetItem()
-            item.setFlags(item.flags() & ~QtCore.Qt.ItemIsEditable)
+            item.setFlags(item.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
             self.tableWidget.setItem(row, column_index, item)
 
     def clear_table(self):
