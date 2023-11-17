@@ -4,14 +4,16 @@ from PySide6.QtWidgets import QApplication
 from Gui import MainWindow
 import logging
 import datetime
+import resources_rc
+print(f'* Модуль {resources_rc.__name__} импортирован.')
 
 if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
     try:
         import pyi_splash
         pyi_splash.update_text('UI Loaded ...')
         pyi_splash.close()
-    except:
-        pass
+    except ModuleNotFoundError as e:
+        print(e)
 
 log_name = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S.log')
 logs_folder = f'{os.path.dirname(sys.argv[0])}\\logs'

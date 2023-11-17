@@ -1,1 +1,1 @@
-from ui.WindowNewMeasurement import Ui_MainWindow
+#from ui.WindowNewMeasurement import Ui_MainWindow

@@ -10,7 +10,6 @@ from helpers import warning_message, error_message, log_info, log_warning
 import numpy as np
 from ui.MainWindow import Ui_MainWindow
 from AboutWindow import show_about
-import resources_rc
 
 def safe_save():
     while True:
@@ -90,7 +89,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def openPort(self):
         self.serialReader.port = self.combobo_ports.currentText()
-        if self.serialReader.port != '' and self.serial_is_started == False:
+        if self.serialReader.port != '' and self.serial_is_started is False:
             self.data_processor = DataProcessor(
                 curve_dta=self.plotter.plot_curve_dta,
                 curve_temp=self.plotter.plot_curve_temp,
@@ -104,8 +103,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             try:
                 self.plotter.plot_curve_dta.clear()
                 self.data_processor.connector_dta.clear()
-            except:
-                pass
+            except Exception as e:
+                log_warning(f'Не удалось очистить график: {e}')
             if self.serialReader.start():
                 self.data_processor.timer_current_data.start(1000)
                 self.serial_is_started = True

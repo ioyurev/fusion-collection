@@ -31,10 +31,10 @@ class SerialReader(QtCore.QThread):
                         parity=serial.PARITY_ODD,
                         stopbits=serial.STOPBITS_TWO,
                         bytesize=serial.EIGHTBITS)
-        except:
+        except serial.SerialException as e:
+            log_critical(f'Не удалось открыть порт: {e}')
             self.exit()
             self.wait()
-            log_critical('Не удалось открыть порт.')
             return False
         if self.check_responsability():
             self.start_reading()
@@ -73,7 +73,8 @@ class SerialReader(QtCore.QThread):
             log_info(f'Ответ на вызов модуля 2: {answer2}')
             if answer1 == b'!014011\r' and answer2 == b'!024011\r':
                 return True
-        except:
+        except serial.SerialTimeoutException as e:
+            log_critical(f'Таймаут при попытке вывода в порт: {e}')
             return False
 
     def check_thermocouples(self) -> bool:

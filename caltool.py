@@ -112,8 +112,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             dtype=str
         try:
             return np.array(lst, dtype=dtype)
-        except:
-            warning_message(f'В столбце "{self.tableWidget.horizontalHeaderItem(num).text()}" могут быть только числовые значения!')
+        except Exception as e:
+            warning_message(f'В столбце "{self.tableWidget.horizontalHeaderItem(num).text()}" могут быть только числовые значения!\n{e}')
             return None
 
     def do_calibration(self):
