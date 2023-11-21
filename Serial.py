@@ -80,7 +80,9 @@ class SerialReader(QtCore.QThread):
             if answer1 == b"!014011\r" and answer2 == b"!024011\r":
                 return True
             else:
-                log_critical("Неожиданные ответы модулей. Вероятно, установленные неправильные модули ")
+                log_critical(
+                    "Неожиданные ответы модулей. Вероятно, установленные неправильные модули "
+                )
                 return False
         except serial.SerialTimeoutException as e:
             log_critical(f"Таймаут при попытке вывода в порт: {e}")

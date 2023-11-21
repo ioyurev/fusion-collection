@@ -1,5 +1,4 @@
 import sys
-from typing import Type
 import numpy as np
 from PySide6 import QtWidgets, QtCore, QtGui
 import pandas as pd
