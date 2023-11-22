@@ -1,9 +1,6 @@
-import tomllib
+from __version__ import VERSION
 
-with open("../pyproject.toml", "rb") as f:
-    data = tomllib.load(f)
-version = data["tool"]["poetry"]["version"]
-v = list([int(x) for x in version.split(".")])
+v = list([int(x) for x in VERSION.split(".")])
 v.append(0)
 with open("version_text_file", "r") as f:
     lines = f.readlines()
