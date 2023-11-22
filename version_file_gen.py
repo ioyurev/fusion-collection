@@ -1,9 +1,9 @@
 import configparser
 
 config = configparser.ConfigParser()
-config.read("../.cz.toml")
+config.read("../pyproject.toml")
 
-version = config["tool.commitizen"]["version"][1:-1]
+version = config["tool.poetry"]["version"][1:-1]
 v = list([int(x) for x in version.split(".")])
 v.append(0)
 
