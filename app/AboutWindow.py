@@ -1,7 +1,9 @@
 from PySide6 import QtWidgets, QtGui, QtCore
+from __version__ import VERSION
 
-TEXT = """
-Fussion Analysis<br>
+TEXT = (
+    f"Fussion Analysis {VERSION}<br>"
+    + """
 <br>
 Программа сбора данных термического анализа<br>
 Автор: Юрьев И.О<br>
@@ -14,6 +16,7 @@ i.o.yurev@yandex.ru<br>
 <br>
 <a href=\"https://www.flaticon.com/free-icons/settings\">Settings icons created by dmitri13 - Flaticon</a><br>
 """
+)
 
 
 class AboutWindow(QtWidgets.QDialog):
