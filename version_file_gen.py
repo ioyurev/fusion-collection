@@ -1,14 +1,10 @@
-import configparser
+import tomllib
 
-config = configparser.ConfigParser()
-config.read("../pyproject.toml")
-
-version = config["tool.poetry"]["version"][1:-1]
+with open("../pyproject.toml", "rb") as f:
+    data = tomllib.load(f)
+version = data["tool"]["poetry"]["version"]
 v = list([int(x) for x in version.split(".")])
 v.append(0)
-
-print(v)
-
 with open("version_text_file", "r") as f:
     lines = f.readlines()
 lines[8] = f"    filevers=({v[0]}, {v[1]}, {v[2]}, {v[3]}),"

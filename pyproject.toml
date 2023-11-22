@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "fusion-collection"
-version = "0.0.3"
+version = "0.0.4"
 description = ""
 authors = ["Ilya Yurev <i.o.yurev@yandex.ru>"]
 readme = "README.md"
@@ -28,6 +28,10 @@ build-backend = "poetry.core.masonry.api"
 name = "cz_conventional_commits"
 tag_format = "$version"
 version_scheme = "semver"
-version_files = ["pyproject.toml:^version"]
+version = "0.0.4"
+version_files = [
+    "__version__.py",
+    "pyproject.toml:version"
+    ]
 update_changelog_on_bump = true
 major_version_zero = true
