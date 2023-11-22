@@ -1,15 +1,15 @@
 from PySide6 import QtWidgets, QtGui
-from Serial import SerialReader, get_serial_ports
-from Plotter import Plotter
-from DataProcessor import DataProcessor
+from app.Serial import SerialReader, get_serial_ports
+from app.Plotter import Plotter
+from app.DataProcessor import DataProcessor
 from data_file.DataFile import Data, pick_save_path
 from calibration_file.CalibrationFile import file_to_cal
-from caltool import pick_open_path, polyfit_coeff_to_str
-from caltool import MainWindow as CaltoolWindow
-from helpers import warning_message, error_message, log_info, log_warning
+from app.caltool import pick_open_path, polyfit_coeff_to_str
+from app.caltool import MainWindow as CaltoolWindow
+from app.helpers import warning_message, error_message, log_info, log_warning
 import numpy as np
 from ui.MainWindow import Ui_MainWindow
-from AboutWindow import show_about
+from app.AboutWindow import show_about
 
 
 def safe_save():
