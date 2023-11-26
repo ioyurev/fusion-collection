@@ -9,3 +9,4 @@ logs
 .ruff_cache
 .venv
 poetry.lock
+__hash__.py

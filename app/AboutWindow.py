@@ -1,8 +1,11 @@
 from PySide6 import QtWidgets, QtGui, QtCore
 from __version__ import VERSION
+from __hash__ import HASH
+
 
 TEXT = (
     f"Fussion Analysis {VERSION}<br>"
+    + f'commit: <a href="https://gitflic.ru/project/i-o-yurev/fusion-collection/commit/{HASH}">{HASH}</a><br>'
     + """
 <br>
 Программа сбора данных термического анализа<br>
@@ -44,9 +47,3 @@ class AboutWindow(QtWidgets.QDialog):
 
 def show_about():
     AboutWindow().exec()
-
-
-if __name__ == "__main__":
-    app = QtWidgets.QApplication()
-    show_about()
-    app.exec()

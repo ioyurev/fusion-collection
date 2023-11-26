@@ -1,3 +1,4 @@
+py git_hash.py
 if not exist pyinstaller mkdir pyinstaller
 cd pyinstaller
 rd /f dist
