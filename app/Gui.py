@@ -80,7 +80,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             self.label_cal_sens.setText(
                 f"f(x) = {polyfit_coeff_to_str(self.coeff_sens)}"
             )
-            self.dta_calc = np.poly1d(self.coeff_sens)
+            self.sens_calc = np.poly1d(self.coeff_sens)
             self.calibration_is_set = True
             self.btn_remove_calibration.setEnabled(True)
 
@@ -90,7 +90,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.coeff_sens = None
         self.label_cal_temp.setText("")
         self.label_cal_sens.setText("")
-        self.dta_calc = None
+        self.sens_calc = None
         self.calibration_is_set = False
         self.btn_remove_calibration.setEnabled(False)
 
@@ -134,10 +134,11 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         t1, t2 = data
         self.label_t1.setText(str(t1))
         self.label_t2.setText(str(t2))
-        self.label_dta_mcv.setText(str(round(t2 - t1, 3)))
+        dta = t2 - t1
+        self.label_dta_mcv.setText(str(round(dta, 3)))
         if self.calibration_is_set:
             self.label_temp.setText(str(round(self.temp_calc(t1), 3)))
-            self.label_dta_mw.setText(str(round(self.dta_calc(t1), 3)))
+            self.label_dta_mw.setText(str(round(dta * self.sens_calc(t1), 3)))
 
     def closePort(self):
         if self.serial_is_started:
