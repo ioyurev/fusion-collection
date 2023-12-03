@@ -1,10 +1,10 @@
 from pglive.sources.live_plot_widget import LivePlotWidget
 from pglive.sources.live_plot import LiveLinePlot
 
-LABEL_T1 = "Термопара 1, мкВ"
-LABEL_T2 = "Термопара 2, мкВ"
+LABEL_T1 = "Термопара 1, мВ"
+LABEL_T2 = "Термопара 2, мВ"
 LABEL_TIME = "Время, с"
-LABEL_EMF = "ДТА, мкВ"
+LABEL_EMF = "ДТА, мВ"
 LABEL_TEMP = "Температура, °C"
 
 
