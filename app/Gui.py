@@ -138,7 +138,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.label_dta_mcv.setText(str(round(dta, 3)))
         if self.calibration_is_set:
             self.label_temp.setText(str(round(self.temp_calc(t1), 3)))
-            self.label_dta_mw.setText(str(round(dta * self.sens_calc(t1), 3)))
+            sens = self.sens_calc(t1)
+            self.label_dta_mw.setText(str(round(dta / sens, 3)))
 
     def closePort(self):
         if self.serial_is_started:
