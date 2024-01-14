@@ -3,7 +3,7 @@ import numpy as np
 from PySide6 import QtWidgets, QtCore, QtGui
 import pandas as pd
 import pyqtgraph as pg
-from app.helpers import warning_message, log_warning, log_info
+from fusion_collection.helpers import warning_message, log_warning, log_info
 from ui.CalToolWindow import Ui_MainWindow
 from calibration_file.CalibrationFile import (
     Calibration,

@@ -1,7 +1,7 @@
 import os
 import sys
 from PySide6.QtWidgets import QApplication
-from app.Gui import MainWindow
+from fusion_collection.Gui import MainWindow
 import logging
 import datetime
 import resources_rc
