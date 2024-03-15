@@ -12,8 +12,6 @@ pyserial = "^3.5"
 pglive = "^0.7.2"
 pandas = "^2.1.3"
 numpy = "^1.26.2,<2"
-calibration_file = {git = "https://gitflic.ru/project/i-o-yurev/fusion-calibration-file-module.git"}
-data_file = {git = "https://gitflic.ru/project/i-o-yurev/fusion-data-file-module.git"}
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.1.6"
