@@ -59,10 +59,9 @@ class DataProcessor(QtCore.QObject):
         tm = round(data[0], 3)
         t1 = float(data[1].decode("utf-8").strip()[4:])
         t2 = float(data[2].decode("utf-8").strip()[4:])
-        if self.calibration_is_set:
-            self.time_array.append(tm)
-            self.t1_array.append(t1)
-            self.t2_array.append(t2)
+        self.time_array.append(tm)
+        self.t1_array.append(t1)
+        self.t2_array.append(t2)
         self.data_point = (t1, t2)
         dt = t2 - t1
         if self.calibration_is_set:
