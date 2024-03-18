@@ -315,7 +315,7 @@
   </customwidget>
  </customwidgets>
  <resources>
-  <include location="../../assets/resources.qrc"/>
+  <include location="resources.qrc"/>
  </resources>
  <connections/>
 </ui>

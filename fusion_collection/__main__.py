@@ -3,9 +3,9 @@ import logging
 import os
 import sys
 
+import ui.resources_rc  # noqa
 from PySide6.QtWidgets import QApplication
 
-import resources_rc  # noqa
 from fusion_collection.Gui import MainWindow
 
 

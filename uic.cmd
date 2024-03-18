@@ -1,9 +1,11 @@
-pyside6-uic.exe ui\src\CalToolWindow.ui > ui\CalToolWindow.py
-pyside6-uic.exe ui\src\MainWindow.ui > ui\MainWindow.py
-pyside6-uic.exe ui\src\WindowNewMeasurement.ui > ui\WindowNewMeasurement.py
+if not exist fusion_collection\ui mkdir fusion_collection\ui
+python devtools/git_hash.py
+pyside6-uic.exe assets\CalToolWindow.ui > fusion_collection\ui\CalToolWindow.py
+pyside6-uic.exe assets\MainWindow.ui > fusion_collection\ui\MainWindow.py
+pyside6-uic.exe assets\WindowNewMeasurement.ui > fusion_collection\ui\WindowNewMeasurement.py
 
-pyside6-rcc.exe assets/resources.qrc > resources_rc.py
+pyside6-rcc.exe assets/resources.qrc > fusion_collection\ui\resources_rc.py
 
-autoflake -i --remove-all-unused-imports ui\CalToolWindow.py
-autoflake -i --remove-all-unused-imports ui\MainWindow.py
-autoflake -i --remove-all-unused-imports ui\WindowNewMeasurement.py
+autoflake -i --remove-all-unused-imports fusion_collection\ui\CalToolWindow.py
+autoflake -i --remove-all-unused-imports fusion_collection\ui\MainWindow.py
+autoflake -i --remove-all-unused-imports fusion_collection\ui\WindowNewMeasurement.py

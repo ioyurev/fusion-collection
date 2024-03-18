@@ -9,5 +9,5 @@ def get_hash():
     return hash_bytes.decode("utf-8")
 
 
-with open("__hash__.py", "w") as f:
+with open("fusion_collection/ui/__hash__.py", "w") as f:
     f.write(f'HASH = "{get_hash()}"')

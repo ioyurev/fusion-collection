@@ -1,11 +1,5 @@
 __pycache__
-test_data
-resources_rc.py
-ui/*.py
+fusion_collection/ui/*.py
 pyinstaller
-test.py
 logs
-.mypy_cache
-.ruff_cache
 .venv
-__hash__.py

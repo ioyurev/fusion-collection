@@ -1,5 +1,6 @@
 from __hash__ import HASH
-from __version__ import VERSION
+
+from fusion_collection.__version__ import VERSION
 
 v = list([int(x) for x in VERSION.split(".")])
 v.append(0)
