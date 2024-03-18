@@ -1,5 +1,7 @@
 import numpy as np
+from loguru import logger as log
 from PySide6 import QtCore, QtGui, QtWidgets
+from ui.MainWindow import Ui_MainWindow
 
 from fusion_collection.AboutWindow import show_about
 from fusion_collection.CalibrationFile import file_to_cal
@@ -7,16 +9,9 @@ from fusion_collection.caltool import MainWindow as CaltoolWindow
 from fusion_collection.caltool import pick_open_path, polyfit_coeff_to_str
 from fusion_collection.DataFile import Data, pick_save_path
 from fusion_collection.DataProcessor import DataProcessor
-from fusion_collection.helpers import (
-    error_message,
-    log_info,
-    log_warning,
-    time_to_str,
-    warning_message,
-)
+from fusion_collection.helpers import error_message, time_to_str, warning_message
 from fusion_collection.Plotter import Plotter
 from fusion_collection.Serial import SerialReader, get_serial_ports
-from ui.MainWindow import Ui_MainWindow
 
 from .data_collections import DataPoint
 
@@ -43,9 +38,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     coeff_temp = None
     cal = None
 
-    def __init__(self, log_path: str):
+    def __init__(self):
         super().__init__()
-        self.log_path = log_path
         self.setupUi(self)
         self.setWindowIcon(QtGui.QIcon(":/icon.png"))
         self.combobo_ports.addItems(get_serial_ports())
@@ -71,7 +65,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
     @QtCore.Slot()
     def start_measurement(self):
-        log_info("Попытка запуска измерения.")
+        log.info("Попытка запуска измерения.")
         self.closePort()
         if self.openPort():
             self.btn_start_measurement.setEnabled(False)
@@ -133,11 +127,11 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                 self.plotter.plot_curve_dta.clear()
                 self.data_processor.connector_dta.clear()
             except Exception as e:
-                log_warning(f"Не удалось очистить график: {e}")
+                log.warning(f"Не удалось очистить график: {e}")
             if self.serialReader.start_thread():
                 self.data_processor.timer_current_data.start(1000)
                 self.serial_is_started = True
-                log_info("Порт открыт.")
+                log.info("Порт открыт.")
                 return True
             else:
                 self.closePort()
@@ -145,7 +139,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                     f"Не удалось запустить измерение.\nПодробности в журнале сообщений:\n{self.log_path}"
                 )
         else:
-            log_warning("Устройство не обнаружно.")
+            log.warning("Устройство не обнаружно.")
             warning_message(
                 "Устройство не обнаружно.\nПодключите устройство и перезапустите программу."
             )
@@ -168,7 +162,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             self.serialReader.close()
             self.data_processor.timer_current_data.stop()
             self.serial_is_started = False
-            log_info("Порт закрыт.")
+            log.info("Порт закрыт.")
 
     @QtCore.Slot()
     def run_caltool(self):

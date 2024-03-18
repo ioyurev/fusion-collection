@@ -3,7 +3,9 @@ import sys
 import numpy as np
 import pandas as pd
 import pyqtgraph as pg
+from loguru import logger as log
 from PySide6 import QtCore, QtGui, QtWidgets
+from ui.CalToolWindow import Ui_MainWindow
 
 from fusion_collection.CalibrationFile import (
     LABEL_EMF,
@@ -18,8 +20,7 @@ from fusion_collection.CalibrationFile import (
     pick_open_path,
     pick_save_path,
 )
-from fusion_collection.helpers import log_info, log_warning, warning_message
-from ui.CalToolWindow import Ui_MainWindow
+from fusion_collection.helpers import warning_message
 
 MARKER_SIZE = 5
 LW = 3
@@ -89,7 +90,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     @QtCore.Slot()
     def del_row(self):
         indexes = self.tableWidget.selectedIndexes()
-        rows: list[int] = []
+        rows = list[int]
         for index in indexes:
             rows.append(index.row())
         uniqie_rows: list[int] = list(set(rows))
@@ -116,7 +117,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         data = (name, temperature, thermal_effect, emf_signal, peak_area)
         for el in data:
             if el is None:
-                log_warning("Один из стоблцов не заполнен или заполнен неправильно")
+                log.warning("Один из стоблцов не заполнен или заполнен неправильно")
                 return None
         else:
             df = pd.DataFrame()
@@ -240,14 +241,14 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         savepath = pick_save_path()
         if savepath == "":
             return
-        log_info(f"Выбран путь для сохранения: {savepath}")
+        log.info(f"Выбран путь для сохранения: {savepath}")
         cal = Calibration(self.df, self.temp_coeff, self.sens_coeff)
         cal.to_file(savepath)
 
     @QtCore.Slot()
     def open(self):
         openpath = pick_open_path()
-        log_info(f"Выбран файл для открытия: {openpath}")
+        log.info(f"Выбран файл для открытия: {openpath}")
         if openpath == "":
             return
 

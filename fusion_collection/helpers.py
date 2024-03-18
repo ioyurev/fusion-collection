@@ -1,7 +1,7 @@
-import logging
 from threading import Thread
 from typing import Callable
 
+from loguru import logger as log
 from PySide6 import QtCore, QtWidgets
 
 
@@ -38,23 +38,8 @@ def check_function_timeout(f: Callable, t: int) -> tuple:
     result = thread.result
     alive = thread.is_alive()
     if alive:
-        log_warning(f"Функция {f.__name__} не выполнилась за {t} секунд.")
+        log.warning(f"Функция {f.__name__} не выполнилась за {t} секунд.")
     return (alive, result)
-
-
-def log_critical(message: str):
-    print(f"CRTICALL: {message}")
-    logging.critical(f"{message}")
-
-
-def log_warning(message: str):
-    print(f"WARNING: {message}")
-    logging.warning(f"{message}")
-
-
-def log_info(message: str):
-    print(f"INFO: {message}")
-    logging.info(f"{message}")
 
 
 def error_message(message):

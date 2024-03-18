@@ -1,9 +1,7 @@
-import datetime
-import logging
-import os
 import sys
 
 import ui.resources_rc  # noqa
+from loguru import logger as log
 from PySide6.QtWidgets import QApplication
 
 from fusion_collection.Gui import MainWindow
@@ -11,32 +9,17 @@ from fusion_collection.Gui import MainWindow
 
 def main():
     if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
-        try:
-            import pyi_splash
+        import pyi_splash
 
-            pyi_splash.update_text("UI Loaded ...")
-            pyi_splash.close()
-        except ModuleNotFoundError as e:
-            print(e)
-
-    log_name = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S.log")
-    logs_folder = f"{os.path.dirname(sys.argv[0])}\\logs"
-    log_path = f"{logs_folder}\\{log_name}"
-    if not os.path.exists(logs_folder):
-        os.makedirs(logs_folder)
-    logging.basicConfig(
-        level=logging.INFO,
-        filename=log_path,
-        filemode="w",
-        format="%(asctime)s %(levelname)s %(message)s",
-    )
+        pyi_splash.close()
 
     app = QApplication(sys.argv)
     app.setStyle("Fusion")
-    window = MainWindow(log_path)
+    window = MainWindow()
     window.show()
     sys.exit(app.exec())
 
 
 if __name__ == "__main__":
+    log.add("logs/{time}.log")
     main()

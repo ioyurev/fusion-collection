@@ -2,10 +2,11 @@ from time import time
 
 import serial
 import serial.tools.list_ports
+from loguru import logger as log
 from PySide6 import QtCore, QtWidgets
 
 from .data_collections import DataPointBytes
-from .helpers import check_function_timeout, log_critical, log_info
+from .helpers import check_function_timeout
 
 BAUDRATE = 9600
 ENDCHAR = chr(13)
@@ -41,7 +42,7 @@ class SerialReader(QtCore.QThread):
                 bytesize=serial.EIGHTBITS,
             )
         except serial.SerialException as e:
-            log_critical(f"Не удалось открыть порт: {e}")
+            log.critical(f"Не удалось открыть порт: {e}")
             self.exit()
             self.wait()
             return False
@@ -59,36 +60,36 @@ class SerialReader(QtCore.QThread):
             timeout, result = check_function_timeout(self.check_modules, 2)
             if not timeout:
                 if result:
-                    log_info("Модули обнаружены.")
+                    log.info("Модули обнаружены.")
                     if self.check_thermocouples():
-                        log_info("Все проверки успешно пройдены.")
+                        log.info("Все проверки успешно пройдены.")
                         return True
             else:
-                log_critical("Модули не обнаружены или не отвечают.")
+                log.critical("Модули не обнаружены или не отвечают.")
         return False
 
     def check_port(self) -> bool:
         result = self.ser.is_open
-        log_info(f"Проверка последовательного порта: {result}")
+        log.info(f"Проверка последовательного порта: {result}")
         return result
 
     def check_modules(self) -> bool:
         try:
             self.ser.write(MODULE1_NAME)
             answer1 = self.ser.read_until(ENDCHAR_BYTES)
-            log_info(f"Ответ на вызов модуля 1: {answer1!r}")
+            log.info(f"Ответ на вызов модуля 1: {answer1!r}")
             self.ser.write(MODULE2_NAME)
             answer2 = self.ser.read_until(ENDCHAR_BYTES)
-            log_info(f"Ответ на вызов модуля 2: {answer2!r}")
+            log.info(f"Ответ на вызов модуля 2: {answer2!r}")
             if answer1 == b"!014011\r" and answer2 == b"!024011\r":
                 return True
             else:
-                log_critical(
+                log.critical(
                     "Неожиданные ответы модулей. Вероятно, установленные неправильные модули "
                 )
                 return False
         except serial.SerialTimeoutException as e:
-            log_critical(f"Таймаут при попытке вывода в порт: {e}")
+            log.critical(f"Таймаут при попытке вывода в порт: {e}")
             return False
 
     def check_thermocouples(self) -> bool:
@@ -97,13 +98,13 @@ class SerialReader(QtCore.QThread):
         x1 = self.ser.read_until(ENDCHAR_BYTES)
         self.ser.write(READCMD_2)
         x2 = self.ser.read_until(ENDCHAR_BYTES)
-        log_info(f"Показания термопар: {x1 = }, {x2 = }")
+        log.info(f"Показания термопар: {x1 = }, {x2 = }")
         t1 = float(x1.decode("utf-8").strip()[4:])
         t2 = float(x2.decode("utf-8").strip()[4:])
         if t1 != 65.521 and t2 != 65.521:
             return True
         else:
-            log_critical("Обрыв термопар.")
+            log.critical("Обрыв термопар.")
             return False
 
     def start_reading(self):
