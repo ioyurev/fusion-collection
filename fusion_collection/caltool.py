@@ -80,9 +80,11 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.plotWidget_temp.getPlotItem().update()
         self.plotWidget_sens.getPlotItem().update()
 
+    @QtCore.Slot()
     def add_row(self):
         self.tableWidget.insertRow(self.tableWidget.rowCount())
 
+    @QtCore.Slot()
     def del_row(self):
         indexes = self.tableWidget.selectedIndexes()
         rows: list[int] = []
@@ -136,6 +138,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             )
             return None
 
+    @QtCore.Slot()
     def do_calibration(self):
         if self.table_is_complete() and self.tableWidget.rowCount() > 0:
             self.df = self.get_data()
@@ -216,18 +219,21 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.temp_coeff = coeff
         self.label_cal_temp.setText(f"f(x) = {polyfit_coeff_to_str(coeff)}")
 
+    @QtCore.Slot()
     def new(self):
         self.action_close.setEnabled(True)
         self.action_save.setEnabled(True)
         self.set_editor_enabled(True)
         self.clear_figures()
 
+    @QtCore.Slot()
     def close(self):
         self.action_close.setEnabled(False)
         self.action_save.setEnabled(False)
         self.set_editor_enabled(False)
         self.clear_figures()
 
+    @QtCore.Slot()
     def save(self):
         savepath = pick_save_path()
         if savepath == "":
@@ -236,6 +242,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         cal = Calibration(self.df, self.temp_coeff, self.sens_coeff)
         cal.to_file(savepath)
 
+    @QtCore.Slot()
     def open(self):
         openpath = pick_open_path()
         log_info(f"Выбран файл для открытия: {openpath}")

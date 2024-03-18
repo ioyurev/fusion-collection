@@ -45,5 +45,6 @@ class AboutWindow(QtWidgets.QDialog):
         self.setFixedSize(self.size())
 
 
+@QtCore.Slot()
 def show_about():
     AboutWindow().exec()

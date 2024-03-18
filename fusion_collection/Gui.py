@@ -1,4 +1,4 @@
-from PySide6 import QtWidgets, QtGui
+from PySide6 import QtWidgets, QtGui, QtCore
 from fusion_collection.Serial import SerialReader, get_serial_ports
 from fusion_collection.Plotter import Plotter
 from fusion_collection.DataProcessor import DataProcessor
@@ -57,6 +57,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.serial_is_started = False
         self.calibration_is_set = False
 
+    @QtCore.Slot()
     def start_measurement(self):
         log_info("Попытка запуска измерения.")
         self.closePort()
@@ -64,6 +65,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             self.btn_start_measurement.setEnabled(False)
             self.btn_stop_measurement.setEnabled(True)
 
+    @QtCore.Slot()
     def stop_measurement(self):
         self.closePort()
         tm_arr = self.data_processor.time_array
@@ -73,6 +75,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.btn_start_measurement.setEnabled(True)
         self.btn_stop_measurement.setEnabled(False)
 
+    @QtCore.Slot()
     def choose_calibration(self):
         path = pick_open_path()
         if path != "":
@@ -89,6 +92,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             self.calibration_is_set = True
             self.btn_remove_calibration.setEnabled(True)
 
+    @QtCore.Slot()
     def remove_calibration(self):
         self.cal = None
         self.coeff_temp = None
@@ -135,6 +139,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             )
             return False
 
+    @QtCore.Slot()
     def update_signals_display(self, data: tuple[float, float]):
         t1, t2 = data
         self.label_t1.setText(str(t1))
@@ -153,6 +158,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             self.serial_is_started = False
             log_info("Порт закрыт.")
 
+    @QtCore.Slot()
     def run_caltool(self):
         self.caltool_w = CaltoolWindow()
         self.caltool_w.show()

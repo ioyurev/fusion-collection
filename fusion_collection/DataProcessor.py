@@ -55,6 +55,7 @@ class DataProcessor(QtCore.QObject):
         self.timer_current_data.timeout.connect(self.emit_data)
         self.yn_temp = np.poly1d(coeff_temp)
 
+    @QtCore.Slot()
     def process_data(self, data: tuple[float, bytes, bytes]):
         tm = round(data[0], 3)
         t1 = float(data[1].decode("utf-8").strip()[4:])
@@ -71,6 +72,7 @@ class DataProcessor(QtCore.QObject):
         self.connector_t2.cb_append_data_point(t2, tm)
         self.connector_dta.cb_append_data_point(dt, tm)
 
+    @QtCore.Slot()
     def emit_data(self):
         self.current_data_signal.emit(self.data_point)
 

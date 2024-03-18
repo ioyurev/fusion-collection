@@ -109,6 +109,7 @@ class SerialReader(QtCore.QThread):
         self.start_time = time()
         self.timer.start(READ_INTERVAL)
 
+    @QtCore.Slot()
     def read_data(self):
         self.ser.write(SAMPLE_SYNC)
         self.ser.write(READCMD_1)
