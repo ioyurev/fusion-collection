@@ -5,13 +5,11 @@ import sys
 
 from PySide6.QtWidgets import QApplication
 
-import resources_rc
+import resources_rc  # noqa
 from fusion_collection.Gui import MainWindow
 
-print(f"* Модуль {resources_rc.__name__} импортирован.")
 
-
-def run():
+def main():
     if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
         try:
             import pyi_splash
@@ -38,3 +36,7 @@ def run():
     window = MainWindow(log_path)
     window.show()
     sys.exit(app.exec())
+
+
+if __name__ == "__main__":
+    main()
