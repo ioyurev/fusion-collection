@@ -1,8 +1,11 @@
+import sys
+
+import numpy as np
+import pandas as pd
+import pyqtgraph as pg
+from PySide6 import QtCore, QtGui, QtWidgets
+
 from fusion_collection.CalibrationFile import (
-    Calibration,
-    file_to_cal,
-    pick_open_path,
-    pick_save_path,
     LABEL_EMF,
     LABEL_PAREA,
     LABEL_SAMPLE,
@@ -10,13 +13,12 @@ from fusion_collection.CalibrationFile import (
     LABEL_TEFF,
     LABEL_TEMP,
     LABELS,
+    Calibration,
+    file_to_cal,
+    pick_open_path,
+    pick_save_path,
 )
-import sys
-import numpy as np
-from PySide6 import QtWidgets, QtCore, QtGui
-import pandas as pd
-import pyqtgraph as pg
-from fusion_collection.helpers import warning_message, log_warning, log_info
+from fusion_collection.helpers import log_info, log_warning, warning_message
 from ui.CalToolWindow import Ui_MainWindow
 
 MARKER_SIZE = 5

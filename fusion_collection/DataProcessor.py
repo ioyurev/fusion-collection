@@ -1,7 +1,7 @@
 import numpy as np
-from PySide6 import QtCore
 from pglive.sources.data_connector import DataConnector
 from pglive.sources.live_plot import LiveLinePlot
+from PySide6 import QtCore
 
 MAX_POINTS = 600
 UPDATE_RATE = 10

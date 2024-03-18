@@ -1,7 +1,8 @@
-from PySide6 import QtWidgets
+import logging
 from threading import Thread
 from typing import Callable
-import logging
+
+from PySide6 import QtWidgets
 
 
 class FunctionExecutor(Thread):

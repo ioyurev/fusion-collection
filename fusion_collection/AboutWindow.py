@@ -1,7 +1,7 @@
-from PySide6 import QtWidgets, QtGui, QtCore
-from __version__ import VERSION
-from __hash__ import HASH
+from PySide6 import QtCore, QtGui, QtWidgets
 
+from __hash__ import HASH
+from __version__ import VERSION
 
 TEXT = (
     f"Fussion Analysis {VERSION}<br>"

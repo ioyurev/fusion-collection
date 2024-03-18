@@ -1,10 +1,12 @@
+import datetime
+import logging
 import os
 import sys
+
 from PySide6.QtWidgets import QApplication
-from fusion_collection.Gui import MainWindow
-import logging
-import datetime
+
 import resources_rc
+from fusion_collection.Gui import MainWindow
 
 print(f"* Модуль {resources_rc.__name__} импортирован.")
 

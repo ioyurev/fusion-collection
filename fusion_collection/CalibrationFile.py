@@ -1,7 +1,8 @@
 import io
 import zipfile
-import pandas as pd
+
 import numpy as np
+import pandas as pd
 from PySide6 import QtWidgets
 
 VERSION = 1

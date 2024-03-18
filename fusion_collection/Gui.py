@@ -1,20 +1,21 @@
-from PySide6 import QtWidgets, QtGui, QtCore
-from fusion_collection.Serial import SerialReader, get_serial_ports
-from fusion_collection.Plotter import Plotter
-from fusion_collection.DataProcessor import DataProcessor
-from fusion_collection.DataFile import Data, pick_save_path
+import numpy as np
+from PySide6 import QtCore, QtGui, QtWidgets
+
+from fusion_collection.AboutWindow import show_about
 from fusion_collection.CalibrationFile import file_to_cal
-from fusion_collection.caltool import pick_open_path, polyfit_coeff_to_str
 from fusion_collection.caltool import MainWindow as CaltoolWindow
+from fusion_collection.caltool import pick_open_path, polyfit_coeff_to_str
+from fusion_collection.DataFile import Data, pick_save_path
+from fusion_collection.DataProcessor import DataProcessor
 from fusion_collection.helpers import (
-    warning_message,
     error_message,
     log_info,
     log_warning,
+    warning_message,
 )
-import numpy as np
+from fusion_collection.Plotter import Plotter
+from fusion_collection.Serial import SerialReader, get_serial_ports
 from ui.MainWindow import Ui_MainWindow
-from fusion_collection.AboutWindow import show_about
 
 
 def safe_save():

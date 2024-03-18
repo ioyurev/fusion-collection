@@ -1,8 +1,10 @@
-from PySide6 import QtCore, QtWidgets
 from time import time
+
 import serial
 import serial.tools.list_ports
-from fusion_collection.helpers import check_function_timeout, log_info, log_critical
+from PySide6 import QtCore, QtWidgets
+
+from fusion_collection.helpers import check_function_timeout, log_critical, log_info
 
 BAUDRATE = 9600
 ENDCHAR = chr(13)
