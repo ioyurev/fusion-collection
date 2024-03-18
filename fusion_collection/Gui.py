@@ -3,7 +3,7 @@ from loguru import logger as log
 from PySide6 import QtCore, QtGui, QtWidgets
 from ui.MainWindow import Ui_MainWindow
 
-from fusion_collection.AboutWindow import show_about
+from fusion_collection.AboutWindow import AboutWindow
 from fusion_collection.CalibrationFile import file_to_cal
 from fusion_collection.caltool import MainWindow as CaltoolWindow
 from fusion_collection.caltool import pick_open_path, polyfit_coeff_to_str
@@ -45,7 +45,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.combobo_ports.addItems(get_serial_ports())
 
         self.action_calibration.triggered.connect(self.run_caltool)
-        self.action_about.triggered.connect(show_about)
+        self.action_about.triggered.connect(self.show_about)
 
         self.btn_choose_calibration.clicked.connect(self.choose_calibration)
         self.btn_remove_calibration.clicked.connect(self.remove_calibration)
@@ -62,6 +62,10 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         self.serial_is_started = False
         self.calibration_is_set = False
+
+    @QtCore.Slot()
+    def show_about(self):
+        AboutWindow(parent=self).show()
 
     @QtCore.Slot()
     def start_measurement(self):

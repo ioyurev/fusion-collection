@@ -28,8 +28,3 @@ class AboutWindow(QtWidgets.QDialog):
         self.setLayout(layout)
         self.adjustSize()
         self.setFixedSize(self.size())
-
-
-@QtCore.Slot()
-def show_about():
-    AboutWindow().exec()
