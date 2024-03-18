@@ -4,7 +4,8 @@ import serial
 import serial.tools.list_ports
 from PySide6 import QtCore, QtWidgets
 
-from fusion_collection.helpers import check_function_timeout, log_critical, log_info
+from .data_collections import DataPointBytes
+from .helpers import check_function_timeout, log_critical, log_info
 
 BAUDRATE = 9600
 ENDCHAR = chr(13)
@@ -24,7 +25,7 @@ def get_serial_ports():
 
 
 class SerialReader(QtCore.QThread):
-    received_data = QtCore.Signal(tuple)
+    received_data = QtCore.Signal(DataPointBytes)
     port: str = ""
 
     def start_thread(
@@ -119,7 +120,7 @@ class SerialReader(QtCore.QThread):
         self.ser.write(READCMD_2)
         t2 = self.ser.read_until(ENDCHAR_BYTES)
         tm = time() - self.start_time
-        self.received_data.emit((tm, t1, t2))
+        self.received_data.emit(DataPointBytes(time=tm, t1=t1, t2=t2))
 
     def close(self):
         self.timer.stop()

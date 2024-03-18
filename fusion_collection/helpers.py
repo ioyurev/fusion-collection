@@ -5,6 +5,12 @@ from typing import Callable
 from PySide6 import QtCore, QtWidgets
 
 
+def time_to_str(time: float):
+    min = int(time // 60)
+    sec = int(time % 60)
+    return f"{min:02d}:{sec:02d}"
+
+
 def read_text_from_compiled_qrc_file(filepath: str):
     file = QtCore.QFile(filepath)
     if file.open(QtCore.QFile.OpenModeFlag.ReadOnly | QtCore.QFile.OpenModeFlag.Text):

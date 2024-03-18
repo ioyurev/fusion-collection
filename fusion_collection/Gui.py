@@ -11,11 +11,14 @@ from fusion_collection.helpers import (
     error_message,
     log_info,
     log_warning,
+    time_to_str,
     warning_message,
 )
 from fusion_collection.Plotter import Plotter
 from fusion_collection.Serial import SerialReader, get_serial_ports
 from ui.MainWindow import Ui_MainWindow
+
+from .data_collections import DataPoint
 
 
 def safe_save():
@@ -149,15 +152,15 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             return False
 
     @QtCore.Slot()
-    def update_signals_display(self, data: tuple[float, float]):
-        t1, t2 = data
-        self.label_t1.setText(str(t1))
-        self.label_t2.setText(str(t2))
-        dta = t2 - t1
+    def update_signals_display(self, data: DataPoint):
+        self.label_time.setText(time_to_str(data.time))
+        self.label_t1.setText(str(data.t1))
+        self.label_t2.setText(str(data.t2))
+        dta = data.t2 - data.t1
         self.label_dta_mcv.setText(str(round(dta, 3)))
         if self.calibration_is_set:
-            self.label_temp.setText(str(round(self.temp_calc(t1), 3)))
-            sens = self.sens_calc(t1)
+            self.label_temp.setText(str(round(self.temp_calc(data.t1), 3)))
+            sens = self.sens_calc(data.t1)
             self.label_dta_mw.setText(str(round(dta / sens, 3)))
 
     def closePort(self):

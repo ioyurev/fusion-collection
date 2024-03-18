@@ -3,14 +3,16 @@ from pglive.sources.data_connector import DataConnector
 from pglive.sources.live_plot import LiveLinePlot
 from PySide6 import QtCore
 
+from .data_collections import DataPoint, DataPointBytes
+
 MAX_POINTS = 600
 UPDATE_RATE = 10
 PLOT_RATE = 1
 
 
 class DataProcessor(QtCore.QObject):
-    current_data_signal = QtCore.Signal(tuple)
-    data_point = (0.0, 0.0)
+    current_data_signal = QtCore.Signal(DataPointBytes)
+    data_point = DataPoint(0.0, 0.0, 0.0)
 
     def __init__(
         self,
@@ -55,22 +57,21 @@ class DataProcessor(QtCore.QObject):
         self.timer_current_data.timeout.connect(self.emit_data)
         self.yn_temp = np.poly1d(coeff_temp)
 
-    @QtCore.Slot()
-    def process_data(self, data: tuple[float, bytes, bytes]):
-        tm = round(data[0], 3)
-        t1 = float(data[1].decode("utf-8").strip()[4:])
-        t2 = float(data[2].decode("utf-8").strip()[4:])
-        self.time_array.append(tm)
+    @QtCore.Slot(DataPointBytes)
+    def process_data(self, data_point: DataPointBytes):
+        t1 = float(data_point.t1.decode("utf-8").strip()[4:])
+        t2 = float(data_point.t2.decode("utf-8").strip()[4:])
+        self.time_array.append(data_point.time)
         self.t1_array.append(t1)
         self.t2_array.append(t2)
-        self.data_point = (t1, t2)
+        self.data_point = DataPoint(data_point.time, t1, t2)
         dt = t2 - t1
         if self.calibration_is_set:
             temp = self.calc_temp(t1)
-            self.connector_temp.cb_append_data_point(temp, tm)
-        self.connector_t1.cb_append_data_point(t1, tm)
-        self.connector_t2.cb_append_data_point(t2, tm)
-        self.connector_dta.cb_append_data_point(dt, tm)
+            self.connector_temp.cb_append_data_point(temp, data_point.time)
+        self.connector_t1.cb_append_data_point(t1, data_point.time)
+        self.connector_t2.cb_append_data_point(t2, data_point.time)
+        self.connector_dta.cb_append_data_point(dt, data_point.time)
 
     @QtCore.Slot()
     def emit_data(self):
