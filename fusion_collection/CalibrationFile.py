@@ -7,13 +7,25 @@ from PySide6 import QtWidgets
 
 VERSION = 1
 FILE_EXT_FILTER = "Файл калибровки Fusion(*.fus-cal)"
-LABEL_SAMPLE = "Образец"
-LABEL_TEMP = "Температура, °C"
-LABEL_EMF = "Сигнал температурной\nтермопары, мВ"
-LABEL_PAREA = "Площадь пика, мВ*с/мг"
-LABEL_TEFF = "Тепловой эффект, Дж/г"
-LABEL_SENS = "Чувствительность, мВ/мВт"
-LABELS = [LABEL_SAMPLE, LABEL_TEMP, LABEL_TEFF, LABEL_EMF, LABEL_PAREA, LABEL_SENS]
+
+
+class Label:
+    SAMPLE = "Образец"
+    TEMP = "Температура, °C"
+    EMF = "Сигнал температурной\nтермопары, мВ"
+    PEAK_AREA = "Площадь пика, мВ*с/мг"
+    EFFECT = "Тепловой эффект, Дж/г"
+    SENS = "Чувствительность, мВ/мВт"
+
+
+LABELS = [
+    Label.SAMPLE,
+    Label.TEMP,
+    Label.EMF,
+    Label.PEAK_AREA,
+    Label.EFFECT,
+    Label.SENS,
+]
 
 
 def pick_save_path():

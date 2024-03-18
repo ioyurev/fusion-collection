@@ -8,14 +8,9 @@ from PySide6 import QtCore, QtGui, QtWidgets
 from ui.CalToolWindow import Ui_MainWindow
 
 from fusion_collection.CalibrationFile import (
-    LABEL_EMF,
-    LABEL_PAREA,
-    LABEL_SAMPLE,
-    LABEL_SENS,
-    LABEL_TEFF,
-    LABEL_TEMP,
     LABELS,
     Calibration,
+    Label,
     file_to_cal,
     pick_open_path,
     pick_save_path,
@@ -67,10 +62,10 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.plotWidget_sens = pg.plot()
         self.plotWidget_temp.setTitle("Калибровка температуры")
         self.plotWidget_sens.setTitle("Калибровка чувственности")
-        self.plotWidget_temp.getPlotItem().setLabel("bottom", LABEL_EMF)
-        self.plotWidget_temp.getPlotItem().setLabel("left", LABEL_TEMP)
-        self.plotWidget_sens.getPlotItem().setLabel("bottom", LABEL_TEMP)
-        self.plotWidget_sens.getPlotItem().setLabel("left", LABEL_SENS)
+        self.plotWidget_temp.getPlotItem().setLabel("bottom", Label.EMF)
+        self.plotWidget_temp.getPlotItem().setLabel("left", Label.TEMP)
+        self.plotWidget_sens.getPlotItem().setLabel("bottom", Label.TEMP)
+        self.plotWidget_sens.getPlotItem().setLabel("left", Label.SENS)
         self.plotLayout.addWidget(self.plotWidget_temp)
         self.plotLayout.addWidget(self.plotWidget_sens)
         self.redraw_figures()
@@ -153,18 +148,18 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def calibration_sens(self):
         df = pd.DataFrame()
-        self.df[LABEL_SENS] = self.df[LABEL_TEFF] / self.df[LABEL_PAREA]
+        self.df[Label.SENS] = self.df[Label.EFFECT] / self.df[Label.PEAK_AREA]
         column_index = len(LABELS) - 1
-        for row, value in enumerate(self.df[LABEL_SENS].to_list()):
+        for row, value in enumerate(self.df[Label.SENS].to_list()):
             item = QtWidgets.QTableWidgetItem(str(value))
             item.setFlags(item.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
             self.tableWidget.setItem(row, column_index, item)
 
-        df[LABEL_TEMP] = self.df[LABEL_TEMP]
-        df[LABEL_SENS] = self.df[LABEL_SENS]
-        df.sort_values(LABEL_TEMP, inplace=True)
-        xdata = df[LABEL_TEMP].to_numpy()
-        ydata = df[LABEL_SENS].to_numpy()
+        df[Label.TEMP] = self.df[Label.TEMP]
+        df[Label.SENS] = self.df[Label.SENS]
+        df.sort_values(Label.TEMP, inplace=True)
+        xdata = df[Label.TEMP].to_numpy()
+        ydata = df[Label.SENS].to_numpy()
         coeff = np.polyfit(xdata, ydata, 2)
         yn = np.poly1d(coeff)
         Xdata = np.linspace(xdata[0], xdata[-1], 100)
@@ -180,7 +175,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.plotWidget_sens.addItem(scatter)
 
         for i, (x, y) in enumerate(zip(xdata, ydata)):
-            label = pg.TextItem(text=self.df[LABEL_SAMPLE][i], color="k")
+            label = pg.TextItem(text=self.df[Label.SAMPLE][i], color="k")
             label.setPos(x, y)
             self.plotWidget_sens.addItem(label)
 
@@ -192,11 +187,11 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def calibration_temp(self):
         df = pd.DataFrame()
-        df[LABEL_EMF] = self.df[LABEL_EMF]
-        df[LABEL_TEMP] = self.df[LABEL_TEMP]
-        df.sort_values(LABEL_EMF, inplace=True)
-        xdata = df[LABEL_EMF].to_numpy()
-        ydata = df[LABEL_TEMP].to_numpy()
+        df[Label.EMF] = self.df[Label.EMF]
+        df[Label.TEMP] = self.df[Label.TEMP]
+        df.sort_values(Label.EMF, inplace=True)
+        xdata = df[Label.EMF].to_numpy()
+        ydata = df[Label.TEMP].to_numpy()
         coeff = np.polyfit(xdata, ydata, 2)
         yn = np.poly1d(coeff)
         Xdata = np.linspace(xdata[0], xdata[-1], 100)
@@ -212,7 +207,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.plotWidget_temp.addItem(scatter)
 
         for i, (x, y) in enumerate(zip(xdata, ydata)):
-            label = pg.TextItem(text=self.df[LABEL_SAMPLE][i], color="k")
+            label = pg.TextItem(text=self.df[Label.SAMPLE][i], color="k")
             label.setPos(x, y)
             self.plotWidget_temp.addItem(label)
 
