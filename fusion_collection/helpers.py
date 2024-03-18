@@ -2,7 +2,17 @@ import logging
 from threading import Thread
 from typing import Callable
 
-from PySide6 import QtWidgets
+from PySide6 import QtCore, QtWidgets
+
+
+def read_text_from_compiled_qrc_file(filepath: str):
+    file = QtCore.QFile(filepath)
+    if file.open(QtCore.QFile.OpenModeFlag.ReadOnly | QtCore.QFile.OpenModeFlag.Text):
+        text = file.readAll().data().decode("utf-8")
+        file.close()
+        return text
+    else:
+        raise RuntimeError(f"Не удалось открыть файл {filepath}")
 
 
 class FunctionExecutor(Thread):

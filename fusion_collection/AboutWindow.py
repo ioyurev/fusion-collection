@@ -3,23 +3,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 from __hash__ import HASH
 from __version__ import VERSION
 
-TEXT = (
-    f"Fussion Analysis {VERSION}<br>"
-    + f'commit: <a href="https://gitflic.ru/project/i-o-yurev/fusion-collection/commit/{HASH}">{HASH}</a><br>'
-    + """
-<br>
-Программа сбора данных термического анализа<br>
-Автор: Юрьев И.О<br>
-i.o.yurev@yandex.ru<br>
-Тюмень, 2023 г.<br>
-<br>
-<a href=\"https://www.flaticon.com/free-icons/melt\">Melt icon created by Vitaly Gorbachev - Flaticon</a><br>
-<br>
-<a href=\"https://www.flaticon.com/free-icons/document\">Document icon created by Freepik - Flaticon</a><br>
-<br>
-<a href=\"https://www.flaticon.com/free-icons/settings\">Settings icons created by dmitri13 - Flaticon</a><br>
-"""
-)
+from .helpers import read_text_from_compiled_qrc_file as get_text
 
 
 class AboutWindow(QtWidgets.QDialog):
@@ -37,7 +21,9 @@ class AboutWindow(QtWidgets.QDialog):
         layout.addWidget(label_icon)
         label_text = QtWidgets.QLabel()
         label_text.setTextFormat(QtCore.Qt.TextFormat.RichText)
-        label_text.setText(TEXT)
+        label_text.setText(
+            get_text(":/about_text.html").format(hash=HASH, version=VERSION)
+        )
         label_text.setOpenExternalLinks(True)
         layout.addWidget(label_text)
         self.setLayout(layout)
