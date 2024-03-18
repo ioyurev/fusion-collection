@@ -23,7 +23,15 @@ def safe_save():
         if path:
             break
         else:
-            warning_message("Необходимо выбрать путь для сохранения измерения.")
+            answer = QtWidgets.QMessageBox.question(
+                None,
+                "Сбор данных",
+                "Вы не выбрали путь для созранения измерения.\n Продолжить?",
+                QtWidgets.QMessageBox.StandardButton.Yes
+                | QtWidgets.QMessageBox.StandardButton.No,
+            )
+            if answer == QtWidgets.QMessageBox.StandardButton.Yes:
+                break
     return path
 
 
