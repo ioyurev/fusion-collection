@@ -66,7 +66,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         )
 
         self.serial_is_started = False
-        self.calibration_is_set = False
 
     @QtCore.Slot()
     def show_about(self):
@@ -99,27 +98,21 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         path = pick_open_path()
         if path != "":
             self.cal = file_to_cal(path)
-            self.coeff_temp = self.cal.coeff_temp
-            self.coeff_sens = self.cal.coeff_sens
             self.label_cal_temp.setText(
-                f"f(x) = {polyfit_coeff_to_str(self.coeff_temp)}"
+                f"f(x) = {polyfit_coeff_to_str(self.cal.coeff_temp)}"
             )
             self.label_cal_sens.setText(
-                f"f(x) = {polyfit_coeff_to_str(self.coeff_sens)}"
+                f"f(x) = {polyfit_coeff_to_str(self.cal.coeff_sens)}"
             )
-            self.sens_calc = np.poly1d(self.coeff_sens)
-            self.calibration_is_set = True
+            self.sens_calc = np.poly1d(self.cal.coeff_sens)
             self.btn_remove_calibration.setEnabled(True)
 
     @QtCore.Slot()
     def remove_calibration(self):
         self.cal = None
-        self.coeff_temp = None
-        self.coeff_sens = None
         self.label_cal_temp.setText("")
         self.label_cal_sens.setText("")
         self.sens_calc = None
-        self.calibration_is_set = False
         self.btn_remove_calibration.setEnabled(False)
 
     def openPort(self):
@@ -130,8 +123,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                 curve_temp=self.plotter.plot_curve_temp,
                 curve_t1=self.plotter.plot_curve_t1,
                 curve_t2=self.plotter.plot_curve_t2,
-                coeff_temp=self.coeff_temp,
-                calibration_is_set=self.calibration_is_set,
+                calibration=self.cal,
             )
             self.serialReader.received_data.connect(self.data_processor.process_data)
             self.temp_calc = lambda x: round(self.data_processor.calc_temp(x), 1)
@@ -158,7 +150,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.label_t2.setText(str(data.t2))
         dta = data.t2 - data.t1
         self.label_dta_mcv.setText(str(round(dta, 3)))
-        if self.calibration_is_set:
+        if self.cal:
             self.label_temp.setText(str(round(self.temp_calc(data.t1), 3)))
             sens = self.sens_calc(data.t1)
             self.label_dta_mw.setText(str(round(dta / sens, 3)))

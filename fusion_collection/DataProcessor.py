@@ -3,6 +3,7 @@ from pglive.sources.data_connector import DataConnector
 from pglive.sources.live_plot import LiveLinePlot
 from PySide6 import QtCore
 
+from .CalibrationFile import Calibration
 from .data_collections import DataPoint, DataPointBytes
 
 MAX_POINTS = 600
@@ -13,6 +14,7 @@ PLOT_RATE = 1
 class DataProcessor(QtCore.QObject):
     current_data_signal = QtCore.Signal(DataPointBytes)
     data_point = DataPoint(0.0, 0.0, 0.0)
+    cal = None
 
     def __init__(
         self,
@@ -20,11 +22,12 @@ class DataProcessor(QtCore.QObject):
         curve_temp: LiveLinePlot,
         curve_t1: LiveLinePlot,
         curve_t2: LiveLinePlot,
-        coeff_temp: np.ndarray,
-        calibration_is_set: bool,
+        calibration: Calibration | None = None,
     ) -> None:
         super().__init__()
-        self.calibration_is_set = calibration_is_set
+        self.cal = calibration
+        if self.cal:
+            self.yn_temp = np.poly1d(self.cal.coeff_temp)
         self.time_array: list[float] = []
         self.t1_array: list[float] = []
         self.t2_array: list[float] = []
@@ -54,7 +57,6 @@ class DataProcessor(QtCore.QObject):
         )
         self.timer_current_data = QtCore.QTimer()
         self.timer_current_data.timeout.connect(self.emit_data)
-        self.yn_temp = np.poly1d(coeff_temp)
 
     @QtCore.Slot(DataPointBytes)
     def process_data(self, data_point: DataPointBytes):
@@ -65,7 +67,7 @@ class DataProcessor(QtCore.QObject):
         self.t2_array.append(t2)
         self.data_point = DataPoint(data_point.time, t1, t2)
         dt = t2 - t1
-        if self.calibration_is_set:
+        if self.cal:
             temp = self.calc_temp(t1)
             self.connector_dta_temp.cb_append_data_point(dt, temp)
         else:
