@@ -83,7 +83,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         t2_arr = self.data_processor.t2_array
         save_path = safe_save()
         if save_path != "":
-            Data(tm_arr, t1_arr, t2_arr, self.cal).to_file()
+            Data(tm_arr, t1_arr, t2_arr, self.cal).to_file(path=save_path)
         self.btn_start_measurement.setEnabled(True)
         self.btn_stop_measurement.setEnabled(False)
 
