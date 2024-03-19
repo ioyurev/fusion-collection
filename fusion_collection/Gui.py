@@ -141,9 +141,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                 return True
             else:
                 self.closePort()
-                error_message(
-                    f"Не удалось запустить измерение.\nПодробности в журнале сообщений:\n{self.log_path}"
-                )
+                error_message("Не удалось запустить измерение.")
         else:
             log.warning("Устройство не обнаружно.")
             warning_message(
