@@ -4,6 +4,7 @@ import serial
 import serial.tools.list_ports
 from loguru import logger as log
 from PySide6 import QtCore, QtWidgets
+from testing import values as DATA
 
 from .data_collections import DataPointBytes
 from .helpers import check_function_timeout
@@ -19,6 +20,12 @@ MODULE1_NAME = bytes("$01M" + ENDCHAR, "ascii")
 MODULE2_NAME = bytes("$02M" + ENDCHAR, "ascii")
 
 
+def gen_test_data():
+    length = len(DATA.time)
+    for i in range(length):
+        yield DataPointBytes(time=DATA.time[i], t1=DATA.t1[i], t2=DATA.t2[i])
+
+
 def get_serial_ports():
     ports = serial.tools.list_ports.comports()
     port_list = [port.device for port in ports]
@@ -32,6 +39,8 @@ class SerialReader(QtCore.QThread):
     def start_thread(
         self,
     ) -> bool:
+        if self.port == "":
+            return False
         super().start()
         try:
             self.ser = serial.Serial(
@@ -126,6 +135,22 @@ class SerialReader(QtCore.QThread):
     def close(self):
         self.timer.stop()
         self.ser.close()
+        self.quit()
+
+
+class TestSerialReader(SerialReader):
+    def reset_generator(self):
+        self.generator = gen_test_data()
+
+    def start_thread(self):
+        self.start_reading()
+        return True
+
+    def read_data(self):
+        self.received_data.emit(next(self.generator))
+
+    def close(self):
+        self.timer.stop()
         self.quit()
 
 

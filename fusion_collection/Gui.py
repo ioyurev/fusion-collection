@@ -11,7 +11,7 @@ from fusion_collection.DataFile import Data, pick_save_path
 from fusion_collection.DataProcessor import DataProcessor
 from fusion_collection.helpers import error_message, time_to_str, warning_message
 from fusion_collection.Plotter import Plotter
-from fusion_collection.Serial import SerialReader, get_serial_ports
+from fusion_collection.Serial import SerialReader, TestSerialReader, get_serial_ports
 
 from .data_collections import DataPoint
 
@@ -38,8 +38,9 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     coeff_temp = None
     cal = None
 
-    def __init__(self):
+    def __init__(self, testing: bool):
         super().__init__()
+        self.testing = testing
         self.setupUi(self)
         self.setWindowIcon(QtGui.QIcon(":/icon.png"))
         self.combobo_ports.addItems(get_serial_ports())
@@ -51,8 +52,12 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.btn_remove_calibration.clicked.connect(self.remove_calibration)
         self.btn_start_measurement.clicked.connect(self.start_measurement)
         self.btn_stop_measurement.clicked.connect(self.stop_measurement)
-
-        self.serialReader = SerialReader()
+        if testing:
+            self.serialReader = TestSerialReader()
+            label = QtWidgets.QLabel(self.statusbar, text="Тестовый режим")
+            self.statusbar.addPermanentWidget(label)
+        else:
+            self.serialReader = SerialReader()
         self.plotter = Plotter(
             widget_dta=self.plot_widget_dta,
             widget_dta_temp=self.plot_widget_dta_temp,
@@ -71,6 +76,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def start_measurement(self):
         log.info("Попытка запуска измерения.")
         self.closePort()
+        if self.testing:
+            self.serialReader.reset_generator()
         if self.openPort():
             self.btn_start_measurement.setEnabled(False)
             self.btn_stop_measurement.setEnabled(True)
@@ -117,7 +124,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def openPort(self):
         self.serialReader.port = self.combobo_ports.currentText()
-        if self.serialReader.port != "" and self.serial_is_started is False:
+        if self.serial_is_started is False:
             self.data_processor = DataProcessor(
                 curve_dta=self.plotter.plot_curve_dta,
                 curve_temp=self.plotter.plot_curve_temp,
