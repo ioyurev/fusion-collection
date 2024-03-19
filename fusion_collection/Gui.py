@@ -55,7 +55,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.serialReader = SerialReader()
         self.plotter = Plotter(
             widget_dta=self.plot_widget_dta,
-            widget_temp=self.plot_widget_temp,
+            widget_dta_temp=self.plot_widget_dta_temp,
             widget_t1=self.plot_widget_t1,
             widget_t2=self.plot_widget_t2,
         )
