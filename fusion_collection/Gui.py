@@ -136,11 +136,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             self.serialReader.received_data.connect(self.data_processor.process_data)
             self.temp_calc = lambda x: round(self.data_processor.calc_temp(x), 1)
             self.data_processor.current_data_signal.connect(self.update_signals_display)
-            try:
-                self.plotter.plot_curve_dta.clear()
-                self.data_processor.connector_dta.clear()
-            except Exception as e:
-                log.warning(f"Не удалось очистить график: {e}")
             if self.serialReader.start_thread():
                 self.data_processor.timer_current_data.start(1000)
                 self.serial_is_started = True

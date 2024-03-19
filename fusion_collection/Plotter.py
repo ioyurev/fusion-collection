@@ -41,5 +41,3 @@ class Plotter:
         self.widget_t2.addItem(self.plot_curve_t2)
         self.widget_dta.addItem(self.plot_curve_dta)
         self.widget_dta_temp.addItem(self.plot_curve_temp)
-
-
