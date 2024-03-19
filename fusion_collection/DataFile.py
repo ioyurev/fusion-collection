@@ -57,7 +57,7 @@ class Data:
         time_array: np.ndarray,
         t1_array: np.ndarray,
         t2_array: np.ndarray,
-        cal: Calibration,
+        cal: Calibration | None,
         version=VERSION,
     ):
         if version > VERSION:

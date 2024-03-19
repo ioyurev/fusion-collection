@@ -7,7 +7,7 @@ from fusion_collection.AboutWindow import AboutWindow
 from fusion_collection.CalibrationFile import file_to_cal
 from fusion_collection.caltool import MainWindow as CaltoolWindow
 from fusion_collection.caltool import pick_open_path, polyfit_coeff_to_str
-from fusion_collection.DataFile import Data, pick_save_path
+from fusion_collection.DataFile import pick_save_path
 from fusion_collection.DataProcessor import DataProcessor
 from fusion_collection.helpers import error_message, time_to_str, warning_message
 from fusion_collection.Plotter import Plotter
@@ -64,8 +64,12 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             widget_t1=self.plot_widget_t1,
             widget_t2=self.plot_widget_t2,
         )
-
-        self.serial_is_started = False
+        self.data_processor = DataProcessor(
+            curve_dta=self.plotter.plot_curve_dta,
+            curve_temp=self.plotter.plot_curve_temp,
+            curve_t1=self.plotter.plot_curve_t1,
+            curve_t2=self.plotter.plot_curve_t2,
+        )
 
     @QtCore.Slot()
     def show_about(self):
@@ -73,6 +77,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
     @QtCore.Slot()
     def start_measurement(self):
+        self.data_processor.clear()
         log.info("Попытка запуска измерения.")
         self.closePort()
         if self.testing:
@@ -84,12 +89,9 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     @QtCore.Slot()
     def stop_measurement(self):
         self.closePort()
-        tm_arr = self.data_processor.time_array
-        t1_arr = self.data_processor.t1_array
-        t2_arr = self.data_processor.t2_array
         save_path = safe_save()
         if save_path != "":
-            Data(tm_arr, t1_arr, t2_arr, self.cal).to_file(path=save_path)
+            self.data_processor.save_to_file(path=save_path)
         self.btn_start_measurement.setEnabled(True)
         self.btn_stop_measurement.setEnabled(False)
 
@@ -117,20 +119,13 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def openPort(self):
         self.serialReader.port = self.combobo_ports.currentText()
-        if self.serial_is_started is False:
-            self.data_processor = DataProcessor(
-                curve_dta=self.plotter.plot_curve_dta,
-                curve_temp=self.plotter.plot_curve_temp,
-                curve_t1=self.plotter.plot_curve_t1,
-                curve_t2=self.plotter.plot_curve_t2,
-                calibration=self.cal,
-            )
+        self.data_processor.cal = self.cal
+        if self.serialReader.is_open is False:
             self.serialReader.received_data.connect(self.data_processor.process_data)
             self.temp_calc = lambda x: round(self.data_processor.calc_temp(x), 1)
             self.data_processor.current_data_signal.connect(self.update_signals_display)
             if self.serialReader.start_thread():
                 self.data_processor.timer_current_data.start(1000)
-                self.serial_is_started = True
                 log.info("Порт открыт.")
                 return True
             else:
@@ -156,10 +151,9 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             self.label_dta_mw.setText(str(round(dta / sens, 3)))
 
     def closePort(self):
-        if self.serial_is_started:
+        if self.serialReader.is_open:
             self.serialReader.close()
             self.data_processor.timer_current_data.stop()
-            self.serial_is_started = False
             log.info("Порт закрыт.")
 
     @QtCore.Slot()

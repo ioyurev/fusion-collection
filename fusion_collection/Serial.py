@@ -36,6 +36,10 @@ class SerialReader(QtCore.QThread):
     received_data = QtCore.Signal(DataPointBytes)
     port: str = ""
 
+    @property
+    def is_open(self):
+        return self.ser.is_open
+
     def start_thread(
         self,
     ) -> bool:
@@ -139,10 +143,14 @@ class SerialReader(QtCore.QThread):
 
 
 class TestSerialReader(SerialReader):
+    timer = QtCore.QTimer()
+    is_open = False
+
     def reset_generator(self):
         self.generator = gen_test_data()
 
     def start_thread(self):
+        self.is_open = True
         self.start_reading()
         return True
 
@@ -150,6 +158,7 @@ class TestSerialReader(SerialReader):
         self.received_data.emit(next(self.generator))
 
     def close(self):
+        self.is_open = False
         self.timer.stop()
         self.quit()
 

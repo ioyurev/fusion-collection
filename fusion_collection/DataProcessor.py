@@ -5,6 +5,7 @@ from PySide6 import QtCore
 
 from .CalibrationFile import Calibration
 from .data_collections import DataPoint, DataPointBytes
+from .DataFile import Data
 
 MAX_POINTS = 600
 UPDATE_RATE = 10
@@ -22,12 +23,8 @@ class DataProcessor(QtCore.QObject):
         curve_temp: LiveLinePlot,
         curve_t1: LiveLinePlot,
         curve_t2: LiveLinePlot,
-        calibration: Calibration | None = None,
     ) -> None:
         super().__init__()
-        self.cal = calibration
-        if self.cal:
-            self.yn_temp = np.poly1d(self.cal.coeff_temp)
         self.time_array: list[float] = []
         self.t1_array: list[float] = []
         self.t2_array: list[float] = []
@@ -82,3 +79,17 @@ class DataProcessor(QtCore.QObject):
 
     def calc_temp(self, t: float) -> float:
         return self.yn_temp(t)
+
+    def clear(self):
+        self.connector_t1.clear()
+        self.connector_t2.clear()
+        self.connector_dta.clear()
+        self.connector_dta_temp.clear()
+
+    def set_calibration(self, cal: Calibration | None):
+        self.cal = cal
+        if self.cal:
+            self.yn_temp = np.poly1d(self.cal.coeff_temp)
+
+    def save_to_file(self, path: str):
+        Data(self.time_array, self.t1_array, self.t2_array, self.cal).to_file(path=path)
