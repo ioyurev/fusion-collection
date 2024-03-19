@@ -30,26 +30,26 @@ class DataProcessor(QtCore.QObject):
         self.t2_array: list[float] = []
         self.connector_t1 = DataConnector(
             curve_t1,
-            max_points=MAX_POINTS,
+            # max_points=MAX_POINTS,
             update_rate=UPDATE_RATE,
             plot_rate=PLOT_RATE,
         )
         self.connector_t2 = DataConnector(
             curve_t2,
-            max_points=MAX_POINTS,
+            # max_points=MAX_POINTS,
             update_rate=UPDATE_RATE,
             plot_rate=PLOT_RATE,
         )
         self.connector_dta = DataConnector(
             curve_dta,
-            max_points=MAX_POINTS,
+            # max_points=MAX_POINTS,
             update_rate=UPDATE_RATE,
             plot_rate=PLOT_RATE,
         )
         if self.calibration_is_set:
             self.connector_temp = DataConnector(
                 curve_temp,
-                max_points=MAX_POINTS,
+                # max_points=MAX_POINTS,
                 update_rate=UPDATE_RATE,
                 plot_rate=PLOT_RATE,
             )
