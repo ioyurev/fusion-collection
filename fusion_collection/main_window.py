@@ -6,6 +6,7 @@ from ui.MainWindow import Ui_MainWindow
 from .about_window import AboutWindow
 from .caltool import MainWindow as CaltoolWindow
 from .caltool import polyfit_coeff_to_str
+from .config import config
 from .data_collections import DataPoint
 from .data_file import pick_save_path
 from .data_processor import DataProcessor
@@ -34,9 +35,8 @@ def safe_save():
 
 
 class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
-    def __init__(self, testing: bool):
+    def __init__(self):
         super().__init__()
-        self.testing = testing
         self.setupUi(self)
         self.setWindowIcon(QtGui.QIcon(":/icon.png"))
         self.combobo_ports.addItems(get_serial_ports())
@@ -46,7 +46,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         self.btn_start_measurement.clicked.connect(self.new_measurement)
         self.btn_stop_measurement.clicked.connect(self.stop_measurement)
-        if testing:
+        if config.is_test_mode():
             self.serialReader = TestSerialReader()
             label = QtWidgets.QLabel(self.statusbar, text="Тестовый режим")
             self.statusbar.addPermanentWidget(label)
@@ -76,8 +76,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         nmw.show()
 
     def start_measrument(self, nm: Measurement):
+        self.cal = nm.cal
         if nm.cal:
-            self.cal = nm.cal
             self.label_cal_temp.setText(
                 f"f(x) = {polyfit_coeff_to_str(nm.cal.coeff_temp)}"
             )
@@ -90,7 +90,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.data_processor.set_measurement(nm)
         log.info("Попытка запуска измерения.")
         self.closePort()
-        if self.testing:
+        if config.is_test_mode():
             self.serialReader.reset_generator()
         if self.openPort():
             self.btn_start_measurement.setEnabled(False)

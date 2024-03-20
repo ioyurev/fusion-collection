@@ -4,10 +4,10 @@ import serial
 import serial.tools.list_ports
 from loguru import logger as log
 from PySide6 import QtCore, QtWidgets
-from testing import values as DATA
 
 from .data_collections import DataPointBytes
 from .helpers import check_function_timeout
+from .testing import values as DATA
 
 BAUDRATE = 9600
 ENDCHAR = chr(13)

@@ -3,3 +3,4 @@ fusion_collection/ui/*.py
 pyinstaller
 logs
 .venv
+config.ini

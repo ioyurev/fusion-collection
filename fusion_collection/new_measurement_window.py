@@ -4,6 +4,7 @@ from PySide6 import QtCore, QtWidgets
 
 from .calibration_file import file_to_cal
 from .caltool import pick_open_path
+from .config import config
 from .data_collections import Measurement
 from .data_file import pick_save_path
 from .helpers import error_message
@@ -18,7 +19,6 @@ class NewMeasurementWindow(QtWidgets.QDialog, Ui_Dialog):
         self.setupUi(self)
         self.cal = None
         self.buttonBox.accepted.connect(self.accept)
-        self.buttonBox.rejected.connect(self.reject)
         self.btn_path.clicked.connect(self.pick_savepath)
         self.btn_choose_cal.clicked.connect(self.pick_calibration)
         self.btn_reset_cal.clicked.connect(self.reset_calibration)
@@ -32,6 +32,7 @@ class NewMeasurementWindow(QtWidgets.QDialog, Ui_Dialog):
                 QtWidgets.QStyle.StandardPixmap.SP_DialogOpenButton
             )
         )
+        self.edit_operator.setText(config.get_recent_operator())
 
     def accept(self):
         savepath = Path(self.edit_path.text())
@@ -48,6 +49,8 @@ class NewMeasurementWindow(QtWidgets.QDialog, Ui_Dialog):
             comment=comment,
             cal=self.cal,
         )
+        config.set_recent_operator(operator)
+        config.write()
         self.close()
         self.signal_accepted.emit(nm)
 

@@ -1,4 +1,3 @@
-import argparse
 import sys
 
 import ui.resources_rc  # noqa
@@ -14,21 +13,9 @@ def main():
 
         pyi_splash.close()
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--test",
-        action="store_true",
-        help="Запуск без оборудования с генерируемыми данными.",
-    )
-    args = parser.parse_args()
-    testing = False
-    if args.test:
-        log.info("Тестовый запуск.")
-        testing = True
-
     app = QApplication(sys.argv)
     app.setStyle("Fusion")
-    window = MainWindow(testing=testing)
+    window = MainWindow()
     window.show()
     sys.exit(app.exec())
 
