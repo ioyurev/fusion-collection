@@ -1,12 +1,9 @@
-from pathlib import Path
-
 import numpy as np
 from pglive.sources.data_connector import DataConnector
 from pglive.sources.live_plot import LiveLinePlot
 from PySide6 import QtCore
 
-from .calibration_file import Calibration
-from .data_collections import DataPoint, DataPointBytes
+from .data_collections import DataPoint, DataPointBytes, Measurement
 from .data_file import Data
 
 MAX_POINTS = 600
@@ -17,7 +14,6 @@ PLOT_RATE = 1
 class DataProcessor(QtCore.QObject):
     current_data_signal = QtCore.Signal(DataPointBytes)
     data_point = DataPoint(0.0, 0.0, 0.0)
-    cal = None
 
     def __init__(
         self,
@@ -66,7 +62,7 @@ class DataProcessor(QtCore.QObject):
         self.t2_array.append(t2)
         self.data_point = DataPoint(data_point.time, t1, t2)
         dt = t2 - t1
-        if self.cal:
+        if self.nm.cal:
             temp = self.calc_temp(t1)
             self.connector_dta_temp.cb_append_data_point(dt, temp)
         else:
@@ -88,10 +84,10 @@ class DataProcessor(QtCore.QObject):
         self.connector_dta.clear()
         self.connector_dta_temp.clear()
 
-    def set_calibration(self, cal: Calibration | None):
-        self.cal = cal
-        if self.cal:
-            self.yn_temp = np.poly1d(self.cal.coeff_temp)
+    def set_measurement(self, nm: Measurement):
+        self.nm = nm
+        if self.nm.cal:
+            self.yn_temp = np.poly1d(self.nm.cal.coeff_temp)
 
-    def save_to_file(self, path: Path):
-        Data(self.time_array, self.t1_array, self.t2_array, self.cal).to_file(path=path)
+    def save_file(self):
+        Data(self.time_array, self.t1_array, self.t2_array, self.nm).save_file()

@@ -1,12 +1,15 @@
 import io
+import json
 import zipfile
+from datetime import datetime
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 from PySide6 import QtWidgets
 
-from .calibration_file import Calibration, zipbuffer_to_cal
+from .calibration_file import zipbuffer_to_cal
+from .data_collections import Measurement
 
 VERSION = 1
 FILE_EXT_FILTER = "Файл измерения Fusion(*.fus-mdt)"
@@ -43,8 +46,15 @@ def zipbuffer_to_data(buffer: io.BytesIO):
             cal = zipbuffer_to_cal(zipf.open("calibration.fus-cal"))
         else:
             cal = None
+        nm = Measurement(
+            savepath=Path(""),
+            operator="",
+            sample="",
+            comment="",
+            cal=cal,
+        )
     return Data(
-        time_array=tm_arr, t1_array=t1_arr, t2_array=t2_arr, cal=cal, version=version
+        time_array=tm_arr, t1_array=t1_arr, t2_array=t2_arr, nm=nm, version=version
     )
 
 
@@ -58,7 +68,7 @@ class Data:
         time_array: np.ndarray,
         t1_array: np.ndarray,
         t2_array: np.ndarray,
-        cal: Calibration | None,
+        nm: Measurement,
         version=VERSION,
     ):
         if version > VERSION:
@@ -66,30 +76,30 @@ class Data:
                 "Файл измерения создан в более новой версии Fusion Collection."
             )
         self.version = version
-        self.cal = cal
+        self.nm = nm
         self.df = pd.DataFrame()
         self.df[HEADER_TIME] = time_array
         self.df[HEADER_T1] = t1_array
         self.df[HEADER_T2] = t2_array
         self.info = dict()
-        self.info["version"] = self.version
-        # self.info['time'] = str(datetime.now())
+        self.info["operator"] = nm.operator
+        self.info["sample"] = nm.sample
+        self.info["comment"] = nm.comment
+        self.info["datetime"] = str(datetime.now())
 
     def to_zipbuffer(self):
         buffer_zip = io.BytesIO()
         buffer_data = io.StringIO()
-        if self.cal is not None:
-            buffer_cal = self.cal.to_zipbuffer()
-
         self.df.to_csv(buffer_data, index=False)
-
         with zipfile.ZipFile(buffer_zip, "w", zipfile.ZIP_DEFLATED) as zipf:
             zipf.writestr("VERSION", data=str(self.version))
             zipf.writestr("data.csv", data=buffer_data.getvalue())
-            if self.cal is not None:
+            zipf.writestr("info.json", data=json.dumps(self.info, ensure_ascii=False))
+            if self.nm.cal is not None:
+                buffer_cal = self.nm.cal.to_zipbuffer()
                 zipf.writestr("calibration.fus-cal", data=buffer_cal.getvalue())
         return buffer_zip
 
-    def to_file(self, path: Path):
-        with open(path, "wb") as f:
+    def save_file(self):
+        with open(self.nm.savepath, "wb") as f:
             f.write(self.to_zipbuffer().getbuffer())

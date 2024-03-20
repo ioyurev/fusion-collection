@@ -34,8 +34,6 @@ def safe_save():
 
 
 class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
-    cal = None
-
     def __init__(self, testing: bool):
         super().__init__()
         self.testing = testing
@@ -78,19 +76,18 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         nmw.show()
 
     def start_measrument(self, nm: Measurement):
-        self.nm = nm
         if nm.cal:
             self.cal = nm.cal
             self.label_cal_temp.setText(
-                f"f(x) = {polyfit_coeff_to_str(self.cal.coeff_temp)}"
+                f"f(x) = {polyfit_coeff_to_str(nm.cal.coeff_temp)}"
             )
             self.label_cal_sens.setText(
-                f"f(x) = {polyfit_coeff_to_str(self.cal.coeff_sens)}"
+                f"f(x) = {polyfit_coeff_to_str(nm.cal.coeff_sens)}"
             )
-            self.sens_calc = np.poly1d(self.cal.coeff_sens)
+            self.sens_calc = np.poly1d(nm.cal.coeff_sens)
 
         self.data_processor.clear()
-        self.data_processor.set_calibration(self.cal)
+        self.data_processor.set_measurement(nm)
         log.info("Попытка запуска измерения.")
         self.closePort()
         if self.testing:
@@ -102,7 +99,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     @QtCore.Slot()
     def stop_measurement(self):
         self.closePort()
-        self.data_processor.save_to_file(path=self.nm.savepath)
+        self.data_processor.save_file()
         self.btn_start_measurement.setEnabled(True)
         self.btn_stop_measurement.setEnabled(False)
 
