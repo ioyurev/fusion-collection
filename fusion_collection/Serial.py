@@ -36,6 +36,15 @@ class SerialReader(QtCore.QThread):
     received_data = QtCore.Signal(DataPointBytes)
     port: str = ""
 
+    def __init__(self):
+        super().__init__()
+        self.ser = serial.Serial(
+            baudrate=BAUDRATE,
+            parity=serial.PARITY_ODD,
+            stopbits=serial.STOPBITS_TWO,
+            bytesize=serial.EIGHTBITS,
+        )
+
     @property
     def is_open(self):
         return self.ser.is_open
@@ -46,14 +55,9 @@ class SerialReader(QtCore.QThread):
         if self.port == "":
             return False
         super().start()
+        self.ser.port = self.port
         try:
-            self.ser = serial.Serial(
-                port=self.port,
-                baudrate=BAUDRATE,
-                parity=serial.PARITY_ODD,
-                stopbits=serial.STOPBITS_TWO,
-                bytesize=serial.EIGHTBITS,
-            )
+            self.ser.open()
         except serial.SerialException as e:
             log.critical(f"Не удалось открыть порт: {e}")
             self.exit()
