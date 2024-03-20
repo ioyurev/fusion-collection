@@ -2,7 +2,7 @@ from typing import NamedTuple
 
 import numpy as np
 
-from .data_file import HEADER_T1, HEADER_T2, HEADER_TIME, file_to_data
+from fusion_collection.data_file import HEADER_T1, HEADER_T2, HEADER_TIME, file_to_data
 
 
 class Values(NamedTuple):
