@@ -7,7 +7,7 @@ from loguru import logger as log
 from PySide6 import QtCore, QtGui, QtWidgets
 from ui.CalToolWindow import Ui_MainWindow
 
-from fusion_collection.CalibrationFile import (
+from .CalibrationFile import (
     LABELS,
     Calibration,
     Label,
@@ -15,7 +15,7 @@ from fusion_collection.CalibrationFile import (
     pick_open_path,
     pick_save_path,
 )
-from fusion_collection.helpers import warning_message
+from .helpers import warning_message
 
 MARKER_SIZE = 5
 LW = 3
@@ -98,7 +98,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             for column in range(self.tableWidget.columnCount() - 1):
                 if not self.tableWidget.item(row, column):
                     warning_message(
-                        "Все ячейки должны быть заполнены!\nЕсли остались неиспользованные строки, то удалите их."
+                        "Все ячейки должны быть заполнены!\nЕсли остались неиспользованные строки, то удалите их.",
+                        parent=self,
                     )
                     return False
         return True
@@ -132,7 +133,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             return np.array(lst, dtype=np.dtype(dtype))
         except Exception as e:
             warning_message(
-                f'В столбце "{self.tableWidget.horizontalHeaderItem(num).text()}" могут быть только числовые значения!\n{e}'
+                f'В столбце "{self.tableWidget.horizontalHeaderItem(num).text()}" могут быть только числовые значения!\n{e}',
+                parent=self,
             )
             return None
 

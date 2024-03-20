@@ -42,9 +42,9 @@ def check_function_timeout(f: Callable, t: int) -> tuple:
     return (alive, result)
 
 
-def error_message(message):
-    QtWidgets.QMessageBox.critical(None, "Ошибка", message)
+def error_message(message: str, parent=None):
+    QtWidgets.QMessageBox.critical(parent, "Ошибка", message)
 
 
-def warning_message(message):
-    QtWidgets.QMessageBox.warning(None, "Предупреждение", message)
+def warning_message(message: str, parent=None):
+    QtWidgets.QMessageBox.warning(parent, "Предупреждение", message)

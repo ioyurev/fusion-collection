@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import numpy as np
 from pglive.sources.data_connector import DataConnector
 from pglive.sources.live_plot import LiveLinePlot
@@ -91,5 +93,5 @@ class DataProcessor(QtCore.QObject):
         if self.cal:
             self.yn_temp = np.poly1d(self.cal.coeff_temp)
 
-    def save_to_file(self, path: str):
+    def save_to_file(self, path: Path):
         Data(self.time_array, self.t1_array, self.t2_array, self.cal).to_file(path=path)

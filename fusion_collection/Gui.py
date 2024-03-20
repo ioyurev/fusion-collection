@@ -3,17 +3,16 @@ from loguru import logger as log
 from PySide6 import QtCore, QtGui, QtWidgets
 from ui.MainWindow import Ui_MainWindow
 
-from fusion_collection.AboutWindow import AboutWindow
-from fusion_collection.CalibrationFile import file_to_cal
-from fusion_collection.caltool import MainWindow as CaltoolWindow
-from fusion_collection.caltool import pick_open_path, polyfit_coeff_to_str
-from fusion_collection.DataFile import pick_save_path
-from fusion_collection.DataProcessor import DataProcessor
-from fusion_collection.helpers import error_message, time_to_str, warning_message
-from fusion_collection.Plotter import Plotter
-from fusion_collection.Serial import SerialReader, TestSerialReader, get_serial_ports
-
+from .AboutWindow import AboutWindow
+from .caltool import MainWindow as CaltoolWindow
+from .caltool import polyfit_coeff_to_str
 from .data_collections import DataPoint
+from .DataFile import pick_save_path
+from .DataProcessor import DataProcessor
+from .helpers import error_message, time_to_str, warning_message
+from .new_measurement_window import Measurement, NewMeasurementWindow
+from .Plotter import Plotter
+from .Serial import SerialReader, TestSerialReader, get_serial_ports
 
 
 def safe_save():
@@ -35,7 +34,6 @@ def safe_save():
 
 
 class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
-    coeff_temp = None
     cal = None
 
     def __init__(self, testing: bool):
@@ -48,9 +46,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.action_calibration.triggered.connect(self.run_caltool)
         self.action_about.triggered.connect(self.show_about)
 
-        self.btn_choose_calibration.clicked.connect(self.choose_calibration)
-        self.btn_remove_calibration.clicked.connect(self.remove_calibration)
-        self.btn_start_measurement.clicked.connect(self.start_measurement)
+        self.btn_start_measurement.clicked.connect(self.new_measurement)
         self.btn_stop_measurement.clicked.connect(self.stop_measurement)
         if testing:
             self.serialReader = TestSerialReader()
@@ -76,8 +72,25 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         AboutWindow(parent=self).show()
 
     @QtCore.Slot()
-    def start_measurement(self):
+    def new_measurement(self):
+        nmw = NewMeasurementWindow(parent=self)
+        nmw.signal_accepted.connect(self.start_measrument)
+        nmw.show()
+
+    def start_measrument(self, nm: Measurement):
+        self.nm = nm
+        if nm.cal:
+            self.cal = nm.cal
+            self.label_cal_temp.setText(
+                f"f(x) = {polyfit_coeff_to_str(self.cal.coeff_temp)}"
+            )
+            self.label_cal_sens.setText(
+                f"f(x) = {polyfit_coeff_to_str(self.cal.coeff_sens)}"
+            )
+            self.sens_calc = np.poly1d(self.cal.coeff_sens)
+
         self.data_processor.clear()
+        self.data_processor.set_calibration(self.cal)
         log.info("Попытка запуска измерения.")
         self.closePort()
         if self.testing:
@@ -89,37 +102,12 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     @QtCore.Slot()
     def stop_measurement(self):
         self.closePort()
-        save_path = safe_save()
-        if save_path != "":
-            self.data_processor.save_to_file(path=save_path)
+        self.data_processor.save_to_file(path=self.nm.savepath)
         self.btn_start_measurement.setEnabled(True)
         self.btn_stop_measurement.setEnabled(False)
 
-    @QtCore.Slot()
-    def choose_calibration(self):
-        path = pick_open_path()
-        if path != "":
-            self.cal = file_to_cal(path)
-            self.label_cal_temp.setText(
-                f"f(x) = {polyfit_coeff_to_str(self.cal.coeff_temp)}"
-            )
-            self.label_cal_sens.setText(
-                f"f(x) = {polyfit_coeff_to_str(self.cal.coeff_sens)}"
-            )
-            self.sens_calc = np.poly1d(self.cal.coeff_sens)
-            self.btn_remove_calibration.setEnabled(True)
-
-    @QtCore.Slot()
-    def remove_calibration(self):
-        self.cal = None
-        self.label_cal_temp.setText("")
-        self.label_cal_sens.setText("")
-        self.sens_calc = None
-        self.btn_remove_calibration.setEnabled(False)
-
     def openPort(self):
         self.serialReader.port = self.combobo_ports.currentText()
-        self.data_processor.cal = self.cal
         if self.serialReader.is_open is False:
             self.serialReader.received_data.connect(self.data_processor.process_data)
             self.temp_calc = lambda x: round(self.data_processor.calc_temp(x), 1)
@@ -130,11 +118,12 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                 return True
             else:
                 self.closePort()
-                error_message("Не удалось запустить измерение.")
+                error_message("Не удалось запустить измерение.", parent=self)
         else:
             log.warning("Устройство не обнаружно.")
             warning_message(
-                "Устройство не обнаружно.\nПодключите устройство и перезапустите программу."
+                "Устройство не обнаружно.\nПодключите устройство и перезапустите программу.",
+                parent=self,
             )
             return False
 

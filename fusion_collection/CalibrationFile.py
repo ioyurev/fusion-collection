@@ -1,5 +1,6 @@
 import io
 import zipfile
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -35,12 +36,13 @@ def pick_save_path():
 
 
 def pick_open_path():
-    return QtWidgets.QFileDialog.getOpenFileName(
+    string = QtWidgets.QFileDialog.getOpenFileName(
         None, "Открыть файл калибровки", filter=FILE_EXT_FILTER
     )[0]
+    return Path(string)
 
 
-def file_to_zipbuffer(path: str):
+def file_to_zipbuffer(path: Path):
     with open(path, "rb") as f:
         return io.BytesIO(f.read())
 
@@ -56,7 +58,7 @@ def zipbuffer_to_cal(buffer):
     return Calibration(df, coeff_temp, coenf_sens, version)
 
 
-def file_to_cal(path: str):
+def file_to_cal(path: Path):
     return zipbuffer_to_cal(file_to_zipbuffer(path))
 
 

@@ -1,11 +1,12 @@
 import io
 import zipfile
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
 from PySide6 import QtWidgets
 
-from fusion_collection.CalibrationFile import Calibration, zipbuffer_to_cal
+from .CalibrationFile import Calibration, zipbuffer_to_cal
 
 VERSION = 1
 FILE_EXT_FILTER = "Файл измерения Fusion(*.fus-mdt)"
@@ -89,6 +90,6 @@ class Data:
                 zipf.writestr("calibration.fus-cal", data=buffer_cal.getvalue())
         return buffer_zip
 
-    def to_file(self, path: str):
+    def to_file(self, path: Path):
         with open(path, "wb") as f:
             f.write(self.to_zipbuffer().getbuffer())
