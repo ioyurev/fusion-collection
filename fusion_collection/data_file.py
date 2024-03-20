@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 from PySide6 import QtWidgets
 
-from .CalibrationFile import Calibration, zipbuffer_to_cal
+from .calibration_file import Calibration, zipbuffer_to_cal
 
 VERSION = 1
 FILE_EXT_FILTER = "Файл измерения Fusion(*.fus-mdt)"

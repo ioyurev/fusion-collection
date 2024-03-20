@@ -7,7 +7,7 @@ from loguru import logger as log
 from PySide6 import QtCore, QtGui, QtWidgets
 from ui.CalToolWindow import Ui_MainWindow
 
-from .CalibrationFile import (
+from .calibration_file import (
     LABELS,
     Calibration,
     Label,

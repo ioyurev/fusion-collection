@@ -5,9 +5,9 @@ from pglive.sources.data_connector import DataConnector
 from pglive.sources.live_plot import LiveLinePlot
 from PySide6 import QtCore
 
-from .CalibrationFile import Calibration
+from .calibration_file import Calibration
 from .data_collections import DataPoint, DataPointBytes
-from .DataFile import Data
+from .data_file import Data
 
 MAX_POINTS = 600
 UPDATE_RATE = 10

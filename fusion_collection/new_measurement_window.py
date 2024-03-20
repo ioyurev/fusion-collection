@@ -2,10 +2,10 @@ from pathlib import Path
 
 from PySide6 import QtCore, QtWidgets
 
-from .CalibrationFile import file_to_cal
+from .calibration_file import file_to_cal
 from .caltool import pick_open_path
 from .data_collections import Measurement
-from .DataFile import pick_save_path
+from .data_file import pick_save_path
 from .helpers import error_message
 from .ui.NewMeasurementWindow import Ui_Dialog
 

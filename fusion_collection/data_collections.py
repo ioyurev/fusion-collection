@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import NamedTuple
 
-from .CalibrationFile import Calibration
+from .calibration_file import Calibration
 
 
 class DataPointBytes(NamedTuple):

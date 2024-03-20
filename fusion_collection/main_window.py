@@ -3,12 +3,12 @@ from loguru import logger as log
 from PySide6 import QtCore, QtGui, QtWidgets
 from ui.MainWindow import Ui_MainWindow
 
-from .AboutWindow import AboutWindow
+from .about_window import AboutWindow
 from .caltool import MainWindow as CaltoolWindow
 from .caltool import polyfit_coeff_to_str
 from .data_collections import DataPoint
-from .DataFile import pick_save_path
-from .DataProcessor import DataProcessor
+from .data_file import pick_save_path
+from .data_processor import DataProcessor
 from .helpers import error_message, time_to_str, warning_message
 from .new_measurement_window import Measurement, NewMeasurementWindow
 from .Plotter import Plotter
