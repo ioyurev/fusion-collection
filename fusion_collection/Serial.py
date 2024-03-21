@@ -55,15 +55,8 @@ class SerialReader(QtCore.QThread):
         if self.port == "":
             return False
         super().start()
-        self.ser.port = self.port
-        try:
-            self.ser.open()
-        except serial.SerialException as e:
-            log.critical(f"Не удалось открыть порт: {e}")
-            self.exit()
-            self.wait()
-            return False
-        if self.check_responsability():
+        self.open()
+        if self.check():
             self.start_reading()
             return True
         else:
@@ -72,23 +65,33 @@ class SerialReader(QtCore.QThread):
             self.wait()
             return False
 
-    def check_responsability(self) -> bool:
-        if self.check_port():
-            timeout, result = check_function_timeout(self.check_modules, 2)
-            if not timeout:
-                if result:
-                    log.info("Модули обнаружены.")
-                    if self.check_thermocouples():
-                        log.info("Все проверки успешно пройдены.")
-                        return True
-            else:
-                log.critical("Модули не обнаружены или не отвечают.")
-        return False
+    def open(self):
+        self.ser.port = self.port
+        try:
+            self.ser.open()
+            log.info(f"Порт открыт: {self.port}")
+            return True
+        except serial.SerialException as e:
+            log.exception(e)
+            return False
 
-    def check_port(self) -> bool:
-        result = self.ser.is_open
-        log.info(f"Проверка последовательного порта: {result}")
-        return result
+    def check(self) -> bool:
+        if not self.is_open:
+            log.critical("Неожиданное закрытие порта.")
+            return False
+        timeout, modules_is_found = check_function_timeout(self.check_modules, 2)
+        if timeout:
+            log.critical("Таймаут при проверке модулей.")
+            return False
+        if not modules_is_found:
+            log.critical("Модули не обнаружены.")
+            return False
+        termocouples_is_ok = self.check_thermocouples()
+        if not termocouples_is_ok:
+            log.critical("Обрыв термопар.")
+            return False
+        log.info("Все проверки успешно пройдены.")
+        return True
 
     def check_modules(self) -> bool:
         try:
@@ -121,7 +124,6 @@ class SerialReader(QtCore.QThread):
         if t1 != 65.521 and t2 != 65.521:
             return True
         else:
-            log.critical("Обрыв термопар.")
             return False
 
     def start_reading(self):
@@ -149,6 +151,12 @@ class SerialReader(QtCore.QThread):
 class TestSerialReader(SerialReader):
     timer = QtCore.QTimer()
     is_open = False
+
+    def check(self):
+        return True
+
+    def open(self):
+        return True
 
     def reset_generator(self):
         self.generator = gen_test_data()

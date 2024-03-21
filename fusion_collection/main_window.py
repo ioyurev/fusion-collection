@@ -1,4 +1,3 @@
-import numpy as np
 from loguru import logger as log
 from PySide6 import QtCore, QtGui, QtWidgets
 from ui.MainWindow import Ui_MainWindow
@@ -9,7 +8,7 @@ from .caltool import polyfit_coeff_to_str
 from .config import config
 from .data_collections import DataPoint
 from .data_processor import DataProcessor
-from .helpers import error_message, time_to_str, warning_message
+from .helpers import error_message, time_to_str
 from .new_measurement_window import Measurement, NewMeasurementWindow
 from .Plotter import Plotter
 from .Serial import SerialReader, TestSerialReader, get_serial_ports
@@ -45,6 +44,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             curve_t1=self.plotter.plot_curve_t1,
             curve_t2=self.plotter.plot_curve_t2,
         )
+        self.serialReader.received_data.connect(self.data_processor.process_data)
+        self.data_processor.current_data_signal.connect(self.update_signals_display)
 
     @QtCore.Slot()
     def show_about(self):
@@ -52,30 +53,44 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
     @QtCore.Slot()
     def new_measurement(self):
+        self.serialReader.port = self.combobo_ports.currentText()
+        if not self.serialReader.open():
+            return
+        if not self.serialReader.check():
+            error_message("Проверка оборудования не пройдена.", parent=self)
+            return
         nmw = NewMeasurementWindow(parent=self)
         nmw.signal_accepted.connect(self.start_measrument)
         nmw.show()
 
     def start_measrument(self, nm: Measurement):
+        log.info("Запуск измерения.")
         self.cal = nm.cal
         if nm.cal:
-            self.label_cal_temp.setText(
-                f"f(x) = {polyfit_coeff_to_str(nm.cal.coeff_temp)}"
-            )
-            self.label_cal_sens.setText(
-                f"f(x) = {polyfit_coeff_to_str(nm.cal.coeff_sens)}"
-            )
-            self.sens_calc = np.poly1d(nm.cal.coeff_sens)
-
+            self.set_calibration()
         self.data_processor.clear()
         self.data_processor.set_measurement(nm)
-        log.info("Попытка запуска измерения.")
         self.closePort()
         if config.is_test_mode():
             self.serialReader.reset_generator()
-        if self.openPort():
-            self.btn_start_measurement.setEnabled(False)
-            self.btn_stop_measurement.setEnabled(True)
+        if not self.serialReader.start_thread():
+            self.closePort()
+            error_message("Не удалось запустить измерение.", parent=self)
+            return False
+        log.info("Измерение запущено.")
+        self.data_processor.timer_current_data.start(1000)
+        self.btn_start_measurement.setEnabled(False)
+        self.btn_stop_measurement.setEnabled(True)
+
+    def set_calibration(self):
+        self.label_cal_temp.setText(
+            f"f(x) = {polyfit_coeff_to_str(self.cal.coeff_temp)}"
+        )
+        self.label_cal_sens.setText(
+            f"f(x) = {polyfit_coeff_to_str(self.cal.coeff_sens)}"
+        )
+        self.temp_calc = self.cal.yn_temp
+        self.sens_calc = self.cal.yn_sens
 
     @QtCore.Slot()
     def stop_measurement(self):
@@ -83,27 +98,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.data_processor.save_file()
         self.btn_start_measurement.setEnabled(True)
         self.btn_stop_measurement.setEnabled(False)
-
-    def openPort(self):
-        self.serialReader.port = self.combobo_ports.currentText()
-        if self.serialReader.is_open is False:
-            self.serialReader.received_data.connect(self.data_processor.process_data)
-            self.temp_calc = lambda x: round(self.data_processor.calc_temp(x), 1)
-            self.data_processor.current_data_signal.connect(self.update_signals_display)
-            if self.serialReader.start_thread():
-                self.data_processor.timer_current_data.start(1000)
-                log.info("Порт открыт.")
-                return True
-            else:
-                self.closePort()
-                error_message("Не удалось запустить измерение.", parent=self)
-        else:
-            log.warning("Устройство не обнаружно.")
-            warning_message(
-                "Устройство не обнаружно.\nПодключите устройство и перезапустите программу.",
-                parent=self,
-            )
-            return False
 
     @QtCore.Slot()
     def update_signals_display(self, data: DataPoint):
@@ -113,9 +107,11 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         dta = data.t2 - data.t1
         self.label_dta_mcv.setText(str(round(dta, 3)))
         if self.cal:
-            self.label_temp.setText(str(round(self.temp_calc(data.t1), 3)))
+            temp = self.temp_calc(data.t1)
             sens = self.sens_calc(data.t1)
-            self.label_dta_mw.setText(str(round(dta / sens, 3)))
+            dta_mw = dta / sens
+            self.label_temp.setText(f"{temp:.3f}")
+            self.label_dta_mw.setText(f"{dta_mw:.3f}")
 
     def closePort(self):
         if self.serialReader.is_open:

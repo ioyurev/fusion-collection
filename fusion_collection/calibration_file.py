@@ -74,6 +74,8 @@ class Calibration:
         self.version = version
         self.coeff_temp = coeff_temp
         self.coeff_sens = coeff_sens
+        self.yn_temp = np.poly1d(self.coeff_temp)
+        self.yn_sens = np.poly1d(self.coeff_sens)
 
     def to_zipbuffer(self):
         buffer_zip = io.BytesIO()
