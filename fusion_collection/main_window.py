@@ -8,30 +8,11 @@ from .caltool import MainWindow as CaltoolWindow
 from .caltool import polyfit_coeff_to_str
 from .config import config
 from .data_collections import DataPoint
-from .data_file import pick_save_path
 from .data_processor import DataProcessor
 from .helpers import error_message, time_to_str, warning_message
 from .new_measurement_window import Measurement, NewMeasurementWindow
 from .Plotter import Plotter
 from .Serial import SerialReader, TestSerialReader, get_serial_ports
-
-
-def safe_save():
-    while True:
-        path = pick_save_path()
-        if path:
-            break
-        else:
-            answer = QtWidgets.QMessageBox.question(
-                None,
-                "Сбор данных",
-                "Вы не выбрали путь для созранения измерения.\n Продолжить?",
-                QtWidgets.QMessageBox.StandardButton.Yes
-                | QtWidgets.QMessageBox.StandardButton.No,
-            )
-            if answer == QtWidgets.QMessageBox.StandardButton.Yes:
-                break
-    return path
 
 
 class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
