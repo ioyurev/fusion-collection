@@ -19,6 +19,7 @@ class NewMeasurementWindow(QtWidgets.QDialog, Ui_Dialog):
         self.setupUi(self)
         self.cal = None
         self.buttonBox.accepted.connect(self.accept)
+        self.buttonBox.rejected.connect(self.reject)
         self.btn_path.clicked.connect(self.pick_savepath)
         self.btn_choose_cal.clicked.connect(self.pick_calibration)
         self.btn_reset_cal.clicked.connect(self.reset_calibration)
