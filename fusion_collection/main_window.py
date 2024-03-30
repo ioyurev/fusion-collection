@@ -104,13 +104,13 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.label_time.setText(time_to_str(data.time))
         self.label_t1.setText(str(data.t1))
         self.label_t2.setText(str(data.t2))
-        dta = data.t2 - data.t1
+        dta = data.t1 - data.t2
         self.label_dta_mcv.setText(str(round(dta, 3)))
         if self.cal:
             temp = self.temp_calc(data.t1)
             sens = self.sens_calc(data.t1)
             dta_mw = dta / sens
-            self.label_temp.setText(f"{temp:.3f}")
+            self.label_temp.setText(f"{temp:.1f}")
             self.label_dta_mw.setText(f"{dta_mw:.3f}")
 
     def closePort(self):

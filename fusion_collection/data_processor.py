@@ -61,15 +61,15 @@ class DataProcessor(QtCore.QObject):
         self.t1_array.append(t1)
         self.t2_array.append(t2)
         self.data_point = DataPoint(data_point.time, t1, t2)
-        dt = t2 - t1
+        dta = t1 - t2
         if self.nm.cal:
             temp = self.calc_temp(t1)
-            self.connector_dta_temp.cb_append_data_point(dt, temp)
+            self.connector_dta_temp.cb_append_data_point(dta, temp)
         else:
-            self.connector_dta_temp.cb_append_data_point(dt, t1)
+            self.connector_dta_temp.cb_append_data_point(dta, t1)
         self.connector_t1.cb_append_data_point(t1, data_point.time)
         self.connector_t2.cb_append_data_point(t2, data_point.time)
-        self.connector_dta.cb_append_data_point(dt, data_point.time)
+        self.connector_dta.cb_append_data_point(dta, data_point.time)
 
     @QtCore.Slot()
     def emit_data(self):
