@@ -35,6 +35,7 @@ def get_serial_ports():
 class SerialReader(QtCore.QThread):
     received_data = QtCore.Signal(DataPointBytes)
     port: str = ""
+    read_exception = QtCore.Signal(Exception)
 
     def __init__(self):
         super().__init__()
@@ -134,13 +135,16 @@ class SerialReader(QtCore.QThread):
 
     @QtCore.Slot()
     def read_data(self):
-        self.ser.write(SAMPLE_SYNC)
-        self.ser.write(READCMD_1)
-        t1 = self.ser.read_until(ENDCHAR_BYTES)
-        self.ser.write(READCMD_2)
-        t2 = self.ser.read_until(ENDCHAR_BYTES)
-        tm = time() - self.start_time
-        self.received_data.emit(DataPointBytes(time=tm, t1=t1, t2=t2))
+        try:
+            self.ser.write(SAMPLE_SYNC)
+            self.ser.write(READCMD_1)
+            t1 = self.ser.read_until(ENDCHAR_BYTES)
+            self.ser.write(READCMD_2)
+            t2 = self.ser.read_until(ENDCHAR_BYTES)
+            tm = time() - self.start_time
+            self.received_data.emit(DataPointBytes(time=tm, t1=t1, t2=t2))
+        except Exception as e:
+            self.read_exception.emit(e)
 
     def close(self):
         self.timer.stop()

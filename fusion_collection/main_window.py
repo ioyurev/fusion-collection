@@ -44,8 +44,17 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             curve_t1=self.plotter.plot_curve_t1,
             curve_t2=self.plotter.plot_curve_t2,
         )
+        self.serialReader.read_exception.connect(self.read_exception)
         self.serialReader.received_data.connect(self.data_processor.process_data)
         self.data_processor.current_data_signal.connect(self.update_signals_display)
+
+    @QtCore.Slot(Exception)
+    def read_exception(self, e: Exception):
+        self.stop_measurement()
+        log.exception(e)
+        error_message(
+            "Остановка измерения.\nОшибка в ходе измерения.\n{e}", parent=self
+        )
 
     @QtCore.Slot()
     def show_about(self):
