@@ -45,6 +45,8 @@ class SerialReader(QtCore.QThread):
             stopbits=serial.STOPBITS_TWO,
             bytesize=serial.EIGHTBITS,
         )
+        self.timer = QtCore.QTimer()
+        self.timer.timeout.connect(self.read_data)
 
     @property
     def is_open(self):
@@ -68,13 +70,14 @@ class SerialReader(QtCore.QThread):
 
     def open(self):
         self.ser.port = self.port
-        try:
-            self.ser.open()
-            log.info(f"Порт открыт: {self.port}")
-            return True
-        except serial.SerialException as e:
-            log.exception(e)
-            return False
+        if not self.is_open:
+            try:
+                self.ser.open()
+                log.info(f"Порт открыт: {self.port}")
+                return True
+            except serial.SerialException as e:
+                log.exception(e)
+                return False
 
     def check(self) -> bool:
         if not self.is_open:
@@ -109,8 +112,9 @@ class SerialReader(QtCore.QThread):
                     "Неожиданные ответы модулей. Вероятно, установленные неправильные модули "
                 )
                 return False
-        except serial.SerialTimeoutException as e:
-            log.critical(f"Таймаут при попытке вывода в порт: {e}")
+        except Exception as e:
+            log.critical("Ошибка при проверке модулей.")
+            log.exception(e)
             return False
 
     def check_thermocouples(self) -> bool:
@@ -128,8 +132,6 @@ class SerialReader(QtCore.QThread):
             return False
 
     def start_reading(self):
-        self.timer = QtCore.QTimer()
-        self.timer.timeout.connect(self.read_data)
         self.start_time = time()
         self.timer.start(READ_INTERVAL)
 
