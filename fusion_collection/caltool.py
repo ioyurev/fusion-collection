@@ -5,7 +5,6 @@ import pandas as pd
 import pyqtgraph as pg
 from loguru import logger as log
 from PySide6 import QtCore, QtGui, QtWidgets
-from ui.CalToolWindow import Ui_MainWindow
 
 from .calibration_file import (
     LABELS,
@@ -16,6 +15,7 @@ from .calibration_file import (
     pick_save_path,
 )
 from .helpers import warning_message
+from .ui.CalToolWindow import Ui_MainWindow
 
 MARKER_SIZE = 5
 LW = 3

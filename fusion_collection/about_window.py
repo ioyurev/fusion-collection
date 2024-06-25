@@ -1,8 +1,8 @@
 from PySide6 import QtCore, QtGui, QtWidgets
-from ui.__hash__ import HASH
 
 from .__version__ import VERSION
 from .helpers import read_text_from_compiled_qrc_file as get_text
+from .ui.__hash__ import HASH
 
 
 class AboutWindow(QtWidgets.QDialog):

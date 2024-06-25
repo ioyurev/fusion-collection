@@ -1,4 +1,5 @@
 if not exist fusion_collection\ui mkdir fusion_collection\ui
+if not exist fusion_collection\ui\__init__.py cd . > fusion_collection\ui\__init__.py
 python devtools/git_hash.py
 pyside6-uic.exe assets\CalToolWindow.ui > fusion_collection\ui\CalToolWindow.py
 pyside6-uic.exe assets\MainWindow.ui > fusion_collection\ui\MainWindow.py

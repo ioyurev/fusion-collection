@@ -1,6 +1,5 @@
 from loguru import logger as log
 from PySide6 import QtCore, QtGui, QtWidgets
-from ui.MainWindow import Ui_MainWindow
 
 from .about_window import AboutWindow
 from .caltool import MainWindow as CaltoolWindow
@@ -12,6 +11,7 @@ from .helpers import error_message, time_to_str
 from .new_measurement_window import Measurement, NewMeasurementWindow
 from .Plotter import Plotter
 from .Serial import SerialReader, TestSerialReader, get_serial_ports
+from .ui.MainWindow import Ui_MainWindow
 
 
 class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):

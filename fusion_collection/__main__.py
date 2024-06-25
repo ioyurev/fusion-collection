@@ -1,10 +1,10 @@
 import sys
 
-import ui.resources_rc  # noqa
 from loguru import logger as log
 from PySide6.QtWidgets import QApplication
 
 from fusion_collection.main_window import MainWindow
+from fusion_collection.ui import resources_rc  # noqa
 
 
 def main():
