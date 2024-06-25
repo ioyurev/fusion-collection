@@ -66,7 +66,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         if not self.serialReader.open():
             return
         if not self.serialReader.check():
-            error_message("Проверка оборудования не пройдена.", parent=self)
+            error_message("Ошибка при проверке оборудования.", parent=self)
             return
         nmw = NewMeasurementWindow(parent=self)
         nmw.signal_accepted.connect(self.start_measrument)
