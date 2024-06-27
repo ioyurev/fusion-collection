@@ -7,16 +7,18 @@ from fusion_collection.main_window import MainWindow
 from fusion_collection.ui import resources_rc  # noqa
 
 
-def main():
+def close_splash():
     if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
         import pyi_splash
 
         pyi_splash.close()
 
+
+def main():
     app = QApplication(sys.argv)
-    app.setStyle("Fusion")
     window = MainWindow()
     window.show()
+    close_splash()
     sys.exit(app.exec())
 
 
