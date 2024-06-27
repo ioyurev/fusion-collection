@@ -7,7 +7,6 @@ from PySide6 import QtCore, QtWidgets
 
 from .data_collections import DataPointBytes
 from .helpers import check_function_timeout
-from .testing import values as DATA
 
 BAUDRATE = 9600
 ENDCHAR = chr(13)
@@ -21,6 +20,8 @@ MODULE2_NAME = bytes("$02M" + ENDCHAR, "ascii")
 
 
 def gen_test_data():
+    from .testing import values as DATA
+
     length = len(DATA.time)
     for i in range(length):
         yield DataPointBytes(time=DATA.time[i], t1=DATA.t1[i], t2=DATA.t2[i])

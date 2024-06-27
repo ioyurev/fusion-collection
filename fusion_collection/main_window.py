@@ -26,7 +26,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         self.btn_start_measurement.clicked.connect(self.new_measurement)
         self.btn_stop_measurement.clicked.connect(self.stop_measurement)
-        if config.is_test_mode():
+        if config.is_test_mode:
             self.serialReader = TestSerialReader()
             label = QtWidgets.QLabel(self.statusbar, text="Тестовый режим")
             self.statusbar.addPermanentWidget(label)
@@ -80,7 +80,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.data_processor.clear()
         self.data_processor.set_measurement(nm)
         self.closePort()
-        if config.is_test_mode():
+        if config.is_test_mode:
             self.serialReader.reset_generator()
         if not self.serialReader.start_thread():
             self.closePort()

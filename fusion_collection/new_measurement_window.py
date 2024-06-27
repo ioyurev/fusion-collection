@@ -33,7 +33,7 @@ class NewMeasurementWindow(QtWidgets.QDialog, Ui_Dialog):
                 QtWidgets.QStyle.StandardPixmap.SP_DialogOpenButton
             )
         )
-        self.edit_operator.setText(config.get_recent_operator())
+        self.edit_operator.setText(config.recent_operator)
 
     def accept(self):
         savepath = Path(self.edit_path.text())
@@ -50,7 +50,7 @@ class NewMeasurementWindow(QtWidgets.QDialog, Ui_Dialog):
             comment=comment,
             cal=self.cal,
         )
-        config.set_recent_operator(operator)
+        config.recent_operator = operator
         config.write()
         self.close()
         self.signal_accepted.emit(nm)

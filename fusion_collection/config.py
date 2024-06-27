@@ -6,16 +6,19 @@ CONFIG_PATH = "config.ini"
 
 
 class Config(ConfigParser):
+    is_test_mode = False
+    recent_operator = ""
+
     def write(self):
         log.info("Запись конфигурационного файла.")
+        self.set("Settings", "is_test_mode", f"{self.is_test_mode}")
+        self.set("Recent", "operator", self.recent_operator)
         with open(CONFIG_PATH, "w", encoding="utf-8") as configfile:
             super().write(configfile)
 
     def make_defaults(self):
         self.add_section("Settings")
-        self.set("Settings", "is_test_mode", "False")
         self.add_section("Recent")
-        self.set("Recent", "operator", "")
         self.write()
 
     def read(self):
@@ -25,17 +28,12 @@ class Config(ConfigParser):
         if len(self.sections()) == 0:
             log.info("Конфигурационного файла не существует. Создание по умолчанию.")
             self.make_defaults()
-        if self.is_test_mode():
+
+        self.is_test_mode = self.getboolean("Settings", "is_test_mode")
+        self.recent_operator = self.get("Recent", "operator")
+
+        if self.is_test_mode:
             log.warning("Включен тестовый режим.")
-
-    def get_recent_operator(self):
-        return self["Recent"]["operator"]
-
-    def set_recent_operator(self, value):
-        self["Recent"]["operator"] = value
-
-    def is_test_mode(self):
-        return self.getboolean("Settings", "is_test_mode")
 
 
 config = Config()
