@@ -10,3 +10,5 @@ pyside6-rcc.exe assets/resources.qrc > fusion_collection\ui\resources_rc.py
 autoflake -i --remove-all-unused-imports fusion_collection\ui\CalToolWindow.py
 autoflake -i --remove-all-unused-imports fusion_collection\ui\MainWindow.py
 autoflake -i --remove-all-unused-imports fusion_collection\ui\NewMeasurementWindow.py
+
+python devtools/splash_gen.py
