@@ -74,6 +74,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def start_measrument(self, nm: Measurement):
         log.info("Запуск измерения.")
+        self.label_sample.setText(nm.sample)
         self.cal = nm.cal
         if nm.cal:
             self.set_calibration()
