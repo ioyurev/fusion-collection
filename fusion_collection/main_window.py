@@ -35,8 +35,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.plotter = Plotter(
             widget_dta=self.plot_widget_dta,
             widget_dta_temp=self.plot_widget_dta_temp,
-            widget_t1=self.plot_widget_t1,
-            widget_t2=self.plot_widget_t2,
+            widget_t=self.plot_widget_t,
         )
         self.data_processor = DataProcessor(
             curve_dta=self.plotter.plot_curve_dta,
