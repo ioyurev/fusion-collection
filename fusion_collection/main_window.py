@@ -78,6 +78,9 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.cal = nm.cal
         if nm.cal:
             self.set_calibration()
+            self.plotter.set_dta_label_to_temp()
+        else:
+            self.plotter.set_dta_label_to_emf()
         self.data_processor.clear()
         self.data_processor.set_measurement(nm)
         self.closePort()

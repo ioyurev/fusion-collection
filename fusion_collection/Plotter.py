@@ -31,13 +31,22 @@ class Plotter:
         self.p_dta = self.widget_dta.getPlotItem()
         self.p_dta_temp = self.widget_dta_temp.getPlotItem()
 
-        self.p_t1.setLabel("left", LABEL_T1)
+        self.p_t1.setLabel("bottom", LABEL_TIME)
+        self.p_t2.setLabel("bottom", LABEL_TIME)
+        self.p_dta.setLabel("bottom", LABEL_TIME)
+        self.p_t1.setLabel("left", LABEL_T1, color="#ff0000")
         self.p_t2.setLabel("left", LABEL_T2)
         self.p_dta.setLabel("left", LABEL_DTA, color="#0000ff")
         self.p_dta_temp.setLabel("left", LABEL_DTA, color="#0000ff")
-        self.p_dta_temp.setLabel("bottom", LABEL_TEMP, color="#ff0000")
+        self.p_dta_temp.setLabel("bottom", LABEL_T1, color="#ff0000")
 
         self.widget_t1.addItem(self.plot_curve_t1)
         self.widget_t2.addItem(self.plot_curve_t2)
         self.widget_dta.addItem(self.plot_curve_dta)
         self.widget_dta_temp.addItem(self.plot_curve_temp)
+
+    def set_dta_label_to_temp(self):
+        self.p_dta_temp.setLabel("bottom", LABEL_TEMP, color="#ff0000")
+
+    def set_dta_label_to_emf(self):
+        self.p_dta_temp.setLabel("bottom", LABEL_T1, color="#ff0000")
