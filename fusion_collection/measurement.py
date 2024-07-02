@@ -65,6 +65,8 @@ class Measurement(QtCore.QObject):
         if not self.serialReader.open():
             return False
         if not self.serialReader.check():
-            error_message("Ошибка при проверке оборудования.", parent=self)
+            error_message(
+                message="Ошибка при проверке оборудования.", parent=self.parent()
+            )
             return False
         return True
