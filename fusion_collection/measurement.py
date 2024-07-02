@@ -10,6 +10,7 @@ from .serial_reader import SerialReader, TestSerialReader
 
 
 class Measurement(QtCore.QObject):
+    is_running = False
     mi: MeasurementInfo
     read_exception = QtCore.Signal(Exception)
     current_data_signal = QtCore.Signal(DataPointBytes)
@@ -40,10 +41,12 @@ class Measurement(QtCore.QObject):
             self.close_port()
             error_message("Не удалось запустить измерение.", parent=self)
         self.data_processor.timer_current_data.start(1000)
+        self.is_running = True
 
     def stop(self):
         self.close_port()
         self.data_processor.save_file()
+        self.is_running = False
 
     def set_info(self, mi: MeasurementInfo):
         self.mi = mi

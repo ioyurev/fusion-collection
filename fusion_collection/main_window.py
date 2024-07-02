@@ -32,6 +32,11 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             label = QtWidgets.QLabel(self.statusbar, text="Тестовый режим")
             self.statusbar.addPermanentWidget(label)
 
+    def closeEvent(self, event):
+        if hasattr(self, "measurement") and self.measurement.is_running:
+            self.stop_measurement()
+        super().closeEvent(event)
+
     @QtCore.Slot(Exception)
     def show_read_exception_msg(self, e: Exception):
         self.stop_measurement()
