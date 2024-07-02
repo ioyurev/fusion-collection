@@ -16,7 +16,7 @@ class DataPoint(NamedTuple):
     t2: float
 
 
-class Measurement(NamedTuple):
+class MeasurementInfo(NamedTuple):
     savepath: Path
     operator: str
     sample: str

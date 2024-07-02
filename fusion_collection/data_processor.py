@@ -3,7 +3,7 @@ from pglive.sources.data_connector import DataConnector
 from pglive.sources.live_plot import LiveLinePlot
 from PySide6 import QtCore
 
-from .data_collections import DataPoint, DataPointBytes, Measurement
+from .data_collections import DataPoint, DataPointBytes, MeasurementInfo
 from .data_file import Data
 
 MAX_POINTS = 600
@@ -62,7 +62,7 @@ class DataProcessor(QtCore.QObject):
         self.t2_array.append(t2)
         self.data_point = DataPoint(data_point.time, t1, t2)
         dta = t1 - t2
-        if self.nm.cal:
+        if self.mi.cal:
             temp = self.calc_temp(t1)
             self.connector_dta_temp.cb_append_data_point(dta, temp)
         else:
@@ -84,10 +84,10 @@ class DataProcessor(QtCore.QObject):
         self.connector_dta.clear()
         self.connector_dta_temp.clear()
 
-    def set_measurement(self, nm: Measurement):
-        self.nm = nm
-        if self.nm.cal:
-            self.yn_temp = np.poly1d(self.nm.cal.coeff_temp)
+    def set_measurement(self, mi: MeasurementInfo):
+        self.mi = mi
+        if self.mi.cal:
+            self.yn_temp = np.poly1d(self.mi.cal.coeff_temp)
 
     def save_file(self):
-        Data(self.time_array, self.t1_array, self.t2_array, self.nm).save_file()
+        Data(self.time_array, self.t1_array, self.t2_array, self.mi).save_file()

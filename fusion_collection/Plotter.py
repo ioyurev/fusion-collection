@@ -1,5 +1,6 @@
 from pglive.sources.live_plot import LiveLinePlot
 from pglive.sources.live_plot_widget import LivePlotWidget
+from PySide6 import QtWidgets
 
 LABEL_T = "ЭДС, мВ"
 LABEL_TIME = "Время, с"
@@ -8,15 +9,19 @@ LABEL_TEMP = "Температура, °C"
 
 
 class Plotter:
-    def __init__(
-        self,
-        widget_dta: LivePlotWidget,
-        widget_dta_temp: LivePlotWidget,
-        widget_t: LivePlotWidget,
-    ) -> None:
-        self.widget_dta = widget_dta
-        self.widget_dta_temp = widget_dta_temp
-        self.widget_t = widget_t
+    def __init__(self, plot_layout: QtWidgets.QVBoxLayout) -> None:
+        while plot_layout.count() > 0:
+            item = plot_layout.takeAt(0)
+            if item.widget() is not None:
+                item.widget().deleteLater()
+
+        self.widget_dta = LivePlotWidget()
+        self.widget_dta_temp = LivePlotWidget()
+        self.widget_t = LivePlotWidget()
+
+        plot_layout.addWidget(self.widget_t)
+        plot_layout.addWidget(self.widget_dta)
+        plot_layout.addWidget(self.widget_dta_temp)
 
         self.plot_curve_t1 = LiveLinePlot(pen="r")
         self.plot_curve_t2 = LiveLinePlot(pen="k")

@@ -5,14 +5,14 @@ from PySide6 import QtCore, QtWidgets
 from .calibration_file import file_to_cal
 from .caltool import pick_open_path
 from .config import config
-from .data_collections import Measurement
+from .data_collections import MeasurementInfo
 from .data_file import pick_save_path
 from .helpers import error_message
 from .ui.NewMeasurementWindow import Ui_Dialog
 
 
 class NewMeasurementWindow(QtWidgets.QDialog, Ui_Dialog):
-    signal_accepted = QtCore.Signal(Measurement)
+    signal_accepted = QtCore.Signal(MeasurementInfo)
 
     def __init__(self, parent):
         super().__init__(parent)
@@ -43,7 +43,7 @@ class NewMeasurementWindow(QtWidgets.QDialog, Ui_Dialog):
         operator = self.edit_operator.text()
         sample = self.edit_sample.text()
         comment = self.edit_comment.toPlainText()
-        nm = Measurement(
+        mi = MeasurementInfo(
             savepath=savepath,
             operator=operator,
             sample=sample,
@@ -53,7 +53,7 @@ class NewMeasurementWindow(QtWidgets.QDialog, Ui_Dialog):
         config.recent_operator = operator
         config.write()
         self.close()
-        self.signal_accepted.emit(nm)
+        self.signal_accepted.emit(mi)
 
     def pick_savepath(self):
         path = pick_save_path()

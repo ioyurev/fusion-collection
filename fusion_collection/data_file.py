@@ -9,7 +9,7 @@ import pandas as pd
 from PySide6 import QtWidgets
 
 from .calibration_file import zipbuffer_to_cal
-from .data_collections import Measurement
+from .data_collections import MeasurementInfo
 
 VERSION = 1
 FILE_EXT_FILTER = "Файл измерения Fusion(*.fus-mdt)"
@@ -46,7 +46,7 @@ def zipbuffer_to_data(buffer: io.BytesIO):
             cal = zipbuffer_to_cal(zipf.open("calibration.fus-cal"))
         else:
             cal = None
-        nm = Measurement(
+        mi = MeasurementInfo(
             savepath=Path(""),
             operator="",
             sample="",
@@ -54,7 +54,7 @@ def zipbuffer_to_data(buffer: io.BytesIO):
             cal=cal,
         )
     return Data(
-        time_array=tm_arr, t1_array=t1_arr, t2_array=t2_arr, nm=nm, version=version
+        time_array=tm_arr, t1_array=t1_arr, t2_array=t2_arr, mi=mi, version=version
     )
 
 
@@ -68,7 +68,7 @@ class Data:
         time_array: np.ndarray,
         t1_array: np.ndarray,
         t2_array: np.ndarray,
-        nm: Measurement,
+        mi: MeasurementInfo,
         version=VERSION,
     ):
         if version > VERSION:
@@ -76,15 +76,15 @@ class Data:
                 "Файл измерения создан в более новой версии Fusion Collection."
             )
         self.version = version
-        self.nm = nm
+        self.nm = mi
         self.df = pd.DataFrame()
         self.df[HEADER_TIME] = time_array
         self.df[HEADER_T1] = t1_array
         self.df[HEADER_T2] = t2_array
         self.info = dict()
-        self.info["operator"] = nm.operator
-        self.info["sample"] = nm.sample
-        self.info["comment"] = nm.comment
+        self.info["operator"] = mi.operator
+        self.info["sample"] = mi.sample
+        self.info["comment"] = mi.comment
         self.info["datetime"] = str(datetime.now())
 
     def to_zipbuffer(self):
