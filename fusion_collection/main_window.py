@@ -76,10 +76,12 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def set_calibration(self):
         self.label_cal_temp.setText(
-            f"f(x) = {polyfit_coeff_to_str(self.cal.coeff_temp)}"
+            "Калибровка температуры\n"
+            + f"f(x) = {polyfit_coeff_to_str(self.cal.coeff_temp)}"
         )
         self.label_cal_sens.setText(
-            f"f(x) = {polyfit_coeff_to_str(self.cal.coeff_sens)}"
+            "Калибровка чувствитльности\n"
+            + f"f(x) = {polyfit_coeff_to_str(self.cal.coeff_sens)}"
         )
         self.temp_calc = self.cal.yn_temp
         self.sens_calc = self.cal.yn_sens

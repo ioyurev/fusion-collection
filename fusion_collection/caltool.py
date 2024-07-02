@@ -33,7 +33,7 @@ def polyfit_coeff_to_str(coeff: np.ndarray):
         if i == last_index:
             pass
         else:
-            coeff_str += f" * x<sup>{length - i - 1}</sup>"
+            coeff_str += f" * x^{length - i - 1}"
         equation += coeff_str + " + "
     return equation[:-3]
 
