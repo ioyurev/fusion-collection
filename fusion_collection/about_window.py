@@ -1,30 +1,22 @@
-from PySide6 import QtCore, QtGui, QtWidgets
+from PySide6 import QtCore, QtWidgets
 
 from .__version__ import VERSION
 from .helpers import read_text_from_compiled_qrc_file as get_text
 from .ui.__hash__ import HASH
+from .ui.AboutWindow import Ui_Dialog
 
 
-class AboutWindow(QtWidgets.QDialog):
+class AboutWindow(QtWidgets.QDialog, Ui_Dialog):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("О программе")
-        self.setWindowIcon(QtGui.QIcon(":/icon.png"))
-        layout = QtWidgets.QVBoxLayout()
-        label_icon = QtWidgets.QLabel()
-        label_icon.setPixmap(
-            QtGui.QPixmap(":/icon.png").scaled(
-                128, 128, mode=QtCore.Qt.TransformationMode.SmoothTransformation
-            )
+        self.setupUi(self)
+        self.label_about.setTextFormat(QtCore.Qt.TextFormat.RichText)
+        self.label_about.setText(
+            get_text(":/assets/about_text.html").format(hash=HASH, version=VERSION)
         )
-        layout.addWidget(label_icon)
-        label_text = QtWidgets.QLabel()
-        label_text.setTextFormat(QtCore.Qt.TextFormat.RichText)
-        label_text.setText(
-            get_text(":/about_text.html").format(hash=HASH, version=VERSION)
-        )
-        label_text.setOpenExternalLinks(True)
-        layout.addWidget(label_text)
-        self.setLayout(layout)
+        self.label_about.setOpenExternalLinks(True)
+        self.text_license.setText(get_text(":/LICENSE_RU"))
         self.adjustSize()
-        self.setFixedSize(self.size())
+        size = self.size()
+        size.setWidth(600)
+        self.setFixedSize(size)

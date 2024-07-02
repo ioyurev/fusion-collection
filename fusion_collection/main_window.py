@@ -1,5 +1,5 @@
 from loguru import logger as log
-from PySide6 import QtCore, QtGui, QtWidgets
+from PySide6 import QtCore, QtWidgets
 
 from .about_window import AboutWindow
 from .caltool import MainWindow as CaltoolWindow
@@ -20,7 +20,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
-        self.setWindowIcon(QtGui.QIcon(":/icon.png"))
         self.combobox_ports.addItems(get_serial_ports())
 
         self.action_calibration.triggered.connect(self.run_caltool)

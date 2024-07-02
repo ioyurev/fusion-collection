@@ -1,7 +1,0 @@
-<RCC>
-  <qresource>
-    <file>about_text.html</file>
-    <file>calibration_icon.png</file>
-    <file>icon.png</file>
-  </qresource>
-</RCC>

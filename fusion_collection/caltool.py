@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import pyqtgraph as pg
 from loguru import logger as log
-from PySide6 import QtCore, QtGui, QtWidgets
+from PySide6 import QtCore, QtWidgets
 
 from .calibration_file import (
     LABELS,
@@ -42,7 +42,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
-        self.setWindowIcon(QtGui.QIcon(":/calibration_icon.png"))
 
         self.tableWidget.horizontalHeader().setSectionResizeMode(
             QtWidgets.QHeaderView.ResizeMode.ResizeToContents
@@ -60,8 +59,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         self.plotWidget_temp = pg.plot()
         self.plotWidget_sens = pg.plot()
-        self.plotWidget_temp.setTitle("Калибровка температуры")
-        self.plotWidget_sens.setTitle("Калибровка чувственности")
         self.plotWidget_temp.getPlotItem().setLabel("bottom", Label.EMF)
         self.plotWidget_temp.getPlotItem().setLabel("left", Label.TEMP)
         self.plotWidget_sens.getPlotItem().setLabel("bottom", Label.TEMP)
