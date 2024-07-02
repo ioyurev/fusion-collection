@@ -21,7 +21,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         super().__init__()
         self.setupUi(self)
         self.setWindowIcon(QtGui.QIcon(":/icon.png"))
-        self.combobo_ports.addItems(get_serial_ports())
+        self.combobox_ports.addItems(get_serial_ports())
 
         self.action_calibration.triggered.connect(self.run_caltool)
         self.action_about.triggered.connect(self.show_about)
@@ -48,7 +48,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def new_measurement(self):
         plotter = Plotter(self.plot_layout)
         self.measurement = Measurement(plotter=plotter, parent=self)
-        self.measurement.set_port(self.combobo_ports.currentText())
+        self.measurement.set_port(self.combobox_ports.currentText())
         if not self.measurement.check_hardware():
             return
         self.measurement.read_exception.connect(self.show_read_exception_msg)
