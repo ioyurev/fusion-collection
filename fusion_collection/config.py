@@ -10,7 +10,7 @@ class Config(ConfigParser):
     recent_operator = ""
 
     def write(self):
-        log.info("Запись конфигурационного файла.")
+        log.debug("Запись конфигурационного файла.")
         self.set("Settings", "is_test_mode", f"{self.is_test_mode}")
         self.set("Recent", "operator", self.recent_operator)
         with open(CONFIG_PATH, "w", encoding="utf-8") as configfile:
@@ -22,11 +22,11 @@ class Config(ConfigParser):
         self.write()
 
     def read(self):
-        log.info("Чтение конфигурационного файла.")
+        log.debug("Чтение конфигурационного файла.")
         super().read(CONFIG_PATH, encoding="utf-8")
 
         if len(self.sections()) == 0:
-            log.info("Конфигурационного файла не существует. Создание по умолчанию.")
+            log.warning("Конфигурационного файла не существует. Создание по умолчанию.")
             self.make_defaults()
 
         self.is_test_mode = self.getboolean("Settings", "is_test_mode")
@@ -34,6 +34,7 @@ class Config(ConfigParser):
 
         if self.is_test_mode:
             log.warning("Включен тестовый режим.")
+        log.debug(f"Последний оператор: {self.recent_operator}")
 
 
 config = Config()

@@ -33,18 +33,18 @@ class Measurement(QtCore.QObject):
         self.serialReader.read_exception.connect(self.read_exception.emit)
         self.serialReader.received_data.connect(self.data_processor.process_data)
         self.data_processor.current_data_signal.connect(self.current_data_signal.emit)
-        self.close_port()
+        self.stop_serial()
         self.data_processor.set_measurement(self.mi)
         if config.is_test_mode:
             self.serialReader.reset_generator()
         if not self.serialReader.start_thread():
-            self.close_port()
+            self.stop_serial()
             error_message("Не удалось запустить измерение.", parent=self)
         self.data_processor.timer_current_data.start(1000)
         self.is_running = True
 
     def stop(self):
-        self.close_port()
+        self.stop_serial()
         self.data_processor.save_file()
         self.is_running = False
 
@@ -58,11 +58,11 @@ class Measurement(QtCore.QObject):
     def set_port(self, port: str):
         self.serialReader.port = port
 
-    def close_port(self):
+    def stop_serial(self):
         if self.serialReader.is_open:
-            self.serialReader.close()
             self.data_processor.timer_current_data.stop()
-            log.info("Порт закрыт.")
+            self.serialReader.close()
+            log.debug("Поток последовательного порта остановлен.")
 
     def check_hardware(self):
         if not self.serialReader.open():

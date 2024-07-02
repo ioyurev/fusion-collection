@@ -95,7 +95,7 @@ class SerialReader(QtCore.QThread):
         if not termocouples_is_ok:
             log.critical("Обрыв термопар.")
             return False
-        log.info("Все проверки успешно пройдены.")
+        log.debug("Все проверки успешно пройдены.")
         return True
 
     def check_modules(self) -> bool:
@@ -124,7 +124,7 @@ class SerialReader(QtCore.QThread):
         x1 = self.ser.read_until(ENDCHAR_BYTES)
         self.ser.write(READCMD_2)
         x2 = self.ser.read_until(ENDCHAR_BYTES)
-        log.info(f"Показания термопар: {x1 = }, {x2 = }")
+        log.debug(f"Показания термопар: {x1 = }, {x2 = }")
         t1 = float(x1.decode("utf-8").strip()[4:])
         t2 = float(x2.decode("utf-8").strip()[4:])
         if t1 != 65.521 and t2 != 65.521:
@@ -151,7 +151,9 @@ class SerialReader(QtCore.QThread):
 
     def close(self):
         self.timer.stop()
+        log.debug("Измерение остановлено.")
         self.ser.close()
+        log.debug("Порт закрыт.")
         self.quit()
 
 

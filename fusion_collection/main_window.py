@@ -64,13 +64,13 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def start_measrument(self, mi: MeasurementInfo):
         self.measurement.set_info(mi)
-        log.info("Запуск измерения...")
+        log.debug("Запуск измерения...")
         self.label_sample.setText(mi.sample)
         self.cal = mi.cal
         if mi.cal:
             self.set_calibration()
         self.measurement.start()
-        log.info("Измерение запущено.")
+        log.debug("Измерение запущено.")
         self.btn_start_measurement.setEnabled(False)
         self.btn_stop_measurement.setEnabled(True)
 

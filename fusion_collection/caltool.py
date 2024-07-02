@@ -238,14 +238,14 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         savepath = pick_save_path()
         if savepath == "":
             return
-        log.info(f"Выбран путь для сохранения: {savepath}")
+        log.debug(f"Выбран путь для сохранения: {savepath}")
         cal = Calibration(self.df, self.temp_coeff, self.sens_coeff)
         cal.to_file(savepath)
 
     @QtCore.Slot()
     def open(self):
         openpath = pick_open_path()
-        log.info(f"Выбран файл для открытия: {openpath}")
+        log.debug(f"Выбран файл для открытия: {openpath}")
         if openpath == "":
             return
 

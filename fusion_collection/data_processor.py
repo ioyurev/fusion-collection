@@ -1,4 +1,5 @@
 import numpy as np
+from loguru import logger as log
 from pglive.sources.data_connector import DataConnector
 from pglive.sources.live_plot import LiveLinePlot
 from PySide6 import QtCore
@@ -78,12 +79,6 @@ class DataProcessor(QtCore.QObject):
     def calc_temp(self, t: float) -> float:
         return self.yn_temp(t)
 
-    def clear(self):
-        self.connector_t1.clear()
-        self.connector_t2.clear()
-        self.connector_dta.clear()
-        self.connector_dta_temp.clear()
-
     def set_measurement(self, mi: MeasurementInfo):
         self.mi = mi
         if self.mi.cal:
@@ -91,3 +86,4 @@ class DataProcessor(QtCore.QObject):
 
     def save_file(self):
         Data(self.time_array, self.t1_array, self.t2_array, self.mi).save_file()
+        log.debug("Файл измерения сохранен.")

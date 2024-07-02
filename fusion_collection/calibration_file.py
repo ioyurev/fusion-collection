@@ -98,3 +98,6 @@ class Calibration:
     def to_file(self, path: str):
         with open(path, "wb") as f:
             f.write(self.to_zipbuffer().getbuffer())
+
+    def __repr__(self):
+        return repr(self.coeff_temp)

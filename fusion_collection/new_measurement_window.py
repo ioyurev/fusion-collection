@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from loguru import logger as log
 from PySide6 import QtCore, QtWidgets
 
 from .calibration_file import file_to_cal
@@ -50,6 +51,12 @@ class NewMeasurementWindow(QtWidgets.QDialog, Ui_Dialog):
             comment=comment,
             cal=self.cal,
         )
+        log.debug(f"Новое измерение: {mi.savepath}")
+        log.debug(f"Оператор: {operator}")
+        log.debug(f"Образец: {sample}")
+        log.debug(f"Калибровка: {self.cal}")
+        log.debug(f"Комментарий: {comment}")
+
         config.recent_operator = operator
         config.write()
         self.close()
