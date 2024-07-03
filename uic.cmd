@@ -12,5 +12,3 @@ autoflake -i --remove-all-unused-imports fusion_collection\ui\CalToolWindow.py
 autoflake -i --remove-all-unused-imports fusion_collection\ui\MainWindow.py
 autoflake -i --remove-all-unused-imports fusion_collection\ui\NewMeasurementWindow.py
 autoflake -i --remove-all-unused-imports fusion_collection\ui\AboutWindow.py
-
-python devtools/splash_gen.py
