@@ -1,0 +1,70 @@
+{
+  "title": "Fusion Collection — сбор данных термического анализа (ВТА и ДТА) и управление нагревом",
+  "priority_patterns": [
+    "README.md",
+    "AGENTS.md",
+    "fusion_collection/__main__.py",
+    "fusion_collection/main_window.py"
+  ],
+  "always_ignore": [
+    "*.fus",
+    "uv.lock",
+    ".python-version",
+    "CLAUDE.md",
+    "GEMINI.md",
+    ".claude/**",
+    ".vscode/**",
+    "assets/*.svg"
+  ],
+  "categories": [
+    {
+      "name": "Fusion-Collection: документация и руководство",
+      "patterns": [
+        "README.md",
+        "CHANGELOG.md",
+        "AGENTS.md",
+        "CITATION.cff",
+        "LICENSE*",
+        "fusion_collection/docs/*.md"
+      ],
+      "default": false,
+      "description": "Описание приложения, история изменений, ролевые инструкции и лицензия GPLv3",
+      "tags": ["project", "docs"]
+    },
+    {
+      "name": "Fusion-Collection: ядро, драйверы ADAM и интерфейс (Qt / PySide6)",
+      "patterns": [
+        "fusion_collection/*.py"
+      ],
+      "default": false,
+      "description": "Драйверы ADAM-4011/4021/4520, постоянный мониторинг, сессии записи .fus, менеджеры термопар и калибровок и GUI",
+      "tags": ["project", "programming"]
+    },
+    {
+      "name": "Fusion-Collection: тесты и утилиты",
+      "patterns": [
+        "tests/*.py"
+      ],
+      "default": false,
+      "description": "Модульные тесты аппаратных контрактов, сессий и главного окна",
+      "tags": ["project", "programming"]
+    },
+    {
+      "name": "Fusion-Collection: сборка и среда",
+      "patterns": [
+        "pyproject.toml",
+        "mypy.ini",
+        "vulture_whitelist.py",
+        ".panache.toml",
+        ".pre-commit-config.yaml",
+        ".github/workflows/*.yml",
+        "*.cmd",
+        ".gitattributes",
+        ".gitignore"
+      ],
+      "default": false,
+      "description": "Конфигурация пакета uv, линтеров, vulture, pre-commit и скрипты сборки",
+      "tags": ["project", "config"]
+    }
+  ]
+}

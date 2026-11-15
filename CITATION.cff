@@ -1,0 +1,14 @@
+cff-version: 1.2.0
+message: "If you use this software in your research, please cite it using the metadata below."
+type: software
+title: "Fusion Collection"
+abstract: "Real-time thermal analysis data acquisition (VTA and DTA) and furnace heating control application for Advantech ADAM-4000 modules."
+authors:
+  - family-names: "Yurev"
+    given-names: "Ilya O."
+    email: "i.o.yurev@yandex.ru"
+version: 0.3.0
+date-released: "2026-04-16"
+license: GPL-3.0-or-later
+url: "https://github.com/ioyurev/fusion-collection"
+repository-code: "https://gitflic.ru/project/i-o-yurev/fusion-collection"

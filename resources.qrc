@@ -1,8 +1,0 @@
-<RCC>
-  <qresource>
-    <file>assets/about_text.html</file>
-    <file>LICENSE_RU</file>
-    <file>assets/calibration_icon.png</file>
-    <file>assets/icon.png</file>
-  </qresource>
-</RCC>

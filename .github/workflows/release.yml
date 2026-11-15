@@ -1,0 +1,71 @@
+name: Build Release Installer
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows-installer:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up uv and Python 3.13
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.13"
+
+      - name: Map fusion-common Git URL to HTTPS for CI
+        shell: pwsh
+        run: |
+          git config --global url."https://github.com/ioyurev/fusion-common.git".insteadOf "ssh://git@gitflic.ru/i-o-yurev/fusion-common.git"
+
+      - name: Install dependencies and run tests
+        shell: pwsh
+        run: |
+          uv sync
+          uv run pytest
+
+      - name: Ensure Pandoc is available
+        shell: pwsh
+        run: |
+          if (-not (Get-Command pandoc -ErrorAction SilentlyContinue)) {
+            choco install pandoc --no-progress -y
+          }
+
+      - name: Build PyInstaller bundle, HTML manual, ZIP and Inno Setup installer
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path pyinstaller | Out-Null
+          Push-Location pyinstaller
+          uv run fusion-splash --subtitle "Thermal Data Collection" --bg-color "#FD700D" --svg-out ../assets/icon.svg --icon-out icon.ico --version-from .. --out splash.png
+          uv run pyinstaller ../fusion_collection/__main__.py --noconsole -i icon.ico --splash splash.png --collect-data fusion_common --collect-data fusion_collection -n fusion-collection --noconfirm --exclude-module PyQt6 --exclude-module PyQt5 --exclude-module scipy
+          uv run fusion-packaging version-file --package fusion-collection --product "Fusion Collection" --description "Fusion Collection (VTA & DTA)" --version-from .. --out version_text_file
+          uv run pyi-set_version version_text_file dist/fusion-collection/fusion-collection.exe
+          uv run fusion-docs --package fusion_collection --out-dir dist/fusion-collection
+          uv run fusion-packaging zip-dist --package fusion-collection --version-from .. --dist-root dist
+          uv run fusion-packaging installer --package fusion-collection --product "Fusion Collection" --version-from .. --dist-root dist --icon icon.ico
+          Pop-Location
+
+      - name: Upload installer and portable archive artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: fusion-collection-windows-x64
+          path: |
+            pyinstaller/dist/*_setup_v*.exe
+            pyinstaller/dist/*_v*.zip
+
+      - name: Publish GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            pyinstaller/dist/*_setup_v*.exe
+            pyinstaller/dist/*_v*.zip
+          generate_release_notes: true
