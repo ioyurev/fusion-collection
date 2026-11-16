@@ -177,8 +177,8 @@ dev = [
 
 [[package]]
 name = "fusion-common"
-version = "0.7.1"
-source = { git = "ssh://git@gitflic.ru/i-o-yurev/fusion-common.git#f549cac5f53b8e2ac1281b59bbaf9f457ad19944" }
+version = "0.7.2"
+source = { git = "ssh://git@gitflic.ru/i-o-yurev/fusion-common.git#ec036735b31fbf586f2a696597292b2929789497" }
 dependencies = [
     { name = "loguru" },
     { name = "numpy" },
