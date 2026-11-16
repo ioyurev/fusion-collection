@@ -205,6 +205,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 ),
                 repo_slug="fusion-collection",
                 icon_bg_color=COLLECTION_ICON_BG,
+                zenodo_doi="10.5281/zenodo.24275001",
                 parent=self,
             )
         )

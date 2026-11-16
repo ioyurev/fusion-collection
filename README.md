@@ -1,3 +1,5 @@
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.24275001.svg)](https://doi.org/10.5281/zenodo.24275001)
+
 # Fusion Collection
 
 <p align="center">
@@ -38,7 +40,7 @@
 
 Если вы используете **Fusion Collection** в научной работе, пожалуйста, процитируйте программу (метаданные приведены в файле [`CITATION.cff`](CITATION.cff)):
 
-> *Yurev I. O.* Fusion Collection: Real-time thermal analysis data acquisition (VTA and DTA) and furnace heating control software [Computer software]. — 2026. — URL: <https://github.com/ioyurev/fusion-collection>.
+> *Yurev, I. O.* (2026). Fusion Collection [Computer software]. <https://doi.org/10.5281/zenodo.24275001>
 
 ## Лицензия
 
