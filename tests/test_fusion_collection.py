@@ -1,8 +1,14 @@
 from __future__ import annotations
 
-from pathlib import Path
+from typing import TYPE_CHECKING
 
 import pytest
+from fusion_common import (
+    load_fus,
+    make_vr_thermocouple,
+    make_xa_thermocouple,
+)
+
 from fusion_collection.acquisition import HeaterRamp, LiveSample
 from fusion_collection.adam_config import Adam4011Config, Adam4021Config
 from fusion_collection.config import StandMode
@@ -13,11 +19,9 @@ from fusion_collection.hardware import (
     is_thermocouple_open,
 )
 from fusion_collection.session import MeasurementSession
-from fusion_common import (
-    load_fus,
-    make_vr_thermocouple,
-    make_xa_thermocouple,
-)
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 def test_adam4011_config_validation() -> None:
@@ -35,7 +39,7 @@ def test_adam4021_config_and_safe_zero_offset() -> None:
     assert valid_ao.check_requirements() == []
 
     # CRITICAL HARDWARE INVARIANT TEST: 0.0 V must output +0.001 V (#0300.001)
-    assert SAFE_ZERO_OFFSET_V == pytest.approx(0.001)
+    assert pytest.approx(0.001) == SAFE_ZERO_OFFSET_V
     cmd_zero = Adam4021Module.format_output_command(3, 0.0)
     assert cmd_zero == b"#0300.001"
 
@@ -121,9 +125,10 @@ def test_vta_and_dta_sessions_save_to_fus(tmp_path: Path) -> None:
 def test_main_window_mode_switch_does_not_duplicate_menus() -> None:
     import sys
 
+    from PySide6.QtWidgets import QApplication
+
     from fusion_collection.config import config
     from fusion_collection.main_window import MainWindow
-    from PySide6.QtWidgets import QApplication
 
     _app = QApplication.instance() or QApplication(sys.argv)
     prev_test_mode = config.is_test_mode

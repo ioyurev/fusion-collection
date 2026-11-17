@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import json
-from pathlib import Path
+from functools import lru_cache
+from typing import TYPE_CHECKING
 
 from fusion_common import (
     AdditivePolynomialCalibration,
@@ -12,6 +13,9 @@ from loguru import logger as log
 from pydantic import TypeAdapter
 
 from fusion_collection.config import APPDATA_PATH
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 REFERENCE_STANDARDS: dict[str, float] = {
     "Hg (Ртуть, плавление)": -38.86,
@@ -157,19 +161,11 @@ class ThermocoupleManager:
         return list(self.sensors.keys())
 
 
-_cal_manager: CalibrationManager | None = None
-_tc_manager: ThermocoupleManager | None = None
-
-
+@lru_cache(maxsize=1)
 def get_calibration_manager() -> CalibrationManager:
-    global _cal_manager
-    if _cal_manager is None:
-        _cal_manager = CalibrationManager(APPDATA_PATH / "calibrations")
-    return _cal_manager
+    return CalibrationManager(APPDATA_PATH / "calibrations")
 
 
+@lru_cache(maxsize=1)
 def get_thermocouple_manager() -> ThermocoupleManager:
-    global _tc_manager
-    if _tc_manager is None:
-        _tc_manager = ThermocoupleManager(APPDATA_PATH / "thermocouples")
-    return _tc_manager
+    return ThermocoupleManager(APPDATA_PATH / "thermocouples")

@@ -48,14 +48,15 @@ class Config(BaseModel):
             try:
                 raw = path.read_text(encoding="utf-8")
                 cfg = cls.model_validate_json(raw)
-                log.bind(path=str(path), **cfg.model_dump(mode="json")).info(
-                    "Loaded stand configuration"
-                )
-                return cfg
             except (OSError, ValueError) as exc:
                 log.opt(exception=True).bind(path=str(path), error=repr(exc)).warning(
                     "Failed to read config.json, using defaults"
                 )
+            else:
+                log.bind(path=str(path), **cfg.model_dump(mode="json")).info(
+                    "Loaded stand configuration"
+                )
+                return cfg
         cfg = cls()
         cfg.save(path)
         return cfg

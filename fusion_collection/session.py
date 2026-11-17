@@ -5,8 +5,7 @@ import os
 import sys
 from collections import deque
 from dataclasses import dataclass
-from pathlib import Path
-from typing import IO
+from typing import IO, TYPE_CHECKING
 
 import numpy as np
 from fusion_common import (
@@ -18,14 +17,20 @@ from fusion_common import (
     MeasurementManifest,
     MeasurementRecord,
     SensorSpec,
-    __version__ as common_version,
     evaluate_channel_temperature,
     save_fus,
 )
+from fusion_common import (
+    __version__ as common_version,
+)
 
-from fusion_collection.acquisition import LiveSample
 from fusion_collection.config import StandMode, config
 from fusion_collection.version import VERSION
+
+if TYPE_CHECKING:
+    from pathlib import Path
+
+    from fusion_collection.acquisition import LiveSample
 
 
 @dataclass(frozen=True)

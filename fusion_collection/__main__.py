@@ -21,10 +21,10 @@ def main() -> None:
         icon_bg_color=COLLECTION_ICON_BG,
     )
 
-    from fusion_common.splash import setup_fusion_logging  # noqa: PLC0415
+    from fusion_common.splash import setup_fusion_logging
 
-    from fusion_collection.config import APPDATA_PATH  # noqa: PLC0415
-    from fusion_collection.main_window import MainWindow  # noqa: PLC0415
+    from fusion_collection.config import APPDATA_PATH
+    from fusion_collection.main_window import MainWindow
 
     setup_fusion_logging(APPDATA_PATH)
     window = MainWindow()

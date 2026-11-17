@@ -80,7 +80,7 @@ class LivePlotPanel(QtWidgets.QWidget):
         self.layout_box.addWidget(self.plot_widget, 1)
 
         p_item = self.plot_widget.getPlotItem()
-        assert p_item is not None
+        assert p_item is not None  # noqa: S101 — сужение типа Optional для mypy
         self.main_plot = p_item
         self.main_plot.setLabel("bottom", "Время, мин")
 

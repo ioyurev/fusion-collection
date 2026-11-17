@@ -24,7 +24,7 @@ if _orig_reconfigure is not None:
         except Exception as exc:  # noqa: BLE001
             log.bind(error=str(exc)).warning("CH340 SetCommState warning bypassed")
 
-    serial.serialwin32.Serial._reconfigure_port = _safe_reconfigure_port  # type: ignore[attr-defined]
+    setattr(serial.serialwin32.Serial, "_reconfigure_port", _safe_reconfigure_port)  # noqa: B010
 
 # CRITICAL HARDWARE SAFETY INVARIANT:
 # При подаче строгого 0.000 В с ADAM-4021 на управляющий вход силового блока печи
@@ -290,15 +290,16 @@ class HardwareManager:
                 second_module=second_label,
                 second_ok=ok_second,
             ).info("Completed ADAM port probe")
-            if not ok:
-                self.bus.close()
-            return ok
         except (serial.SerialException, OSError):
             log.opt(exception=True).bind(port=port, mode=mode).warning(
                 "Serial exception while probing COM port"
             )
             self.bus.close()
             return False
+        else:
+            if not ok:
+                self.bus.close()
+            return ok
 
     def connect_and_discover(self, mode: str | None = None) -> bool:
         active_mode = mode or config.mode
