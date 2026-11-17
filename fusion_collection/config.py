@@ -47,9 +47,13 @@ class Config(BaseModel):
         if path.exists():
             try:
                 raw = path.read_text(encoding="utf-8")
-                return cls.model_validate_json(raw)
+                cfg = cls.model_validate_json(raw)
+                log.bind(path=str(path), **cfg.model_dump(mode="json")).info(
+                    "Loaded stand configuration"
+                )
+                return cfg
             except (OSError, ValueError) as exc:
-                log.bind(path=str(path), error=str(exc)).warning(
+                log.opt(exception=True).bind(path=str(path), error=repr(exc)).warning(
                     "Failed to read config.json, using defaults"
                 )
         cfg = cls()
@@ -60,6 +64,9 @@ class Config(BaseModel):
         target = path if path is not None else CONFIG_PATH
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(self.model_dump_json(indent=2), encoding="utf-8")
+        log.bind(path=str(target), **self.model_dump(mode="json")).info(
+            "Saved stand configuration"
+        )
 
     def update(self) -> None:
         self.save(CONFIG_PATH)

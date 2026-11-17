@@ -79,9 +79,26 @@ class AcquisitionLoop(QtCore.QThread):
         self._intervals: deque[float] = deque(maxlen=25)
         self._last_ts: float | None = None
         self._cjc_temp_c: float = 25.0
-        self._tick_counter: int = 0
+        self._consecutive_errors: int = 0
+
+    def refresh_cjc_once(self) -> float:
+        """Считывает температуру холодного спая ($AA3) однократно вне горячего цикла (без фоллбека)."""
+        if config.is_test_mode or not self.hardware.connected:
+            return self._cjc_temp_c
+        self._cjc_temp_c = self.hardware.adam4011_t1.read_cjc_temperature()
+        log.bind(cjc_temp_c=self._cjc_temp_c).info(
+            "Read cold junction temperature ($AA3)"
+        )
+        return self._cjc_temp_c
 
     def start_monitoring(self) -> None:
+        try:
+            self.refresh_cjc_once()
+        except Exception as exc:  # noqa: BLE001
+            log.opt(exception=True).bind(error=repr(exc)).error(
+                "Failed to read CJC temperature ($AA3) on monitoring start"
+            )
+            self.error_occurred.emit(f"Ошибка чтения CJC ($AA3): {exc}")
         if not self.isRunning():
             self._running = True
             self.start()
@@ -135,13 +152,6 @@ class AcquisitionLoop(QtCore.QThread):
                 open_thermocouple_warning=False,
             )
 
-        if self._tick_counter % 50 == 0:
-            try:
-                self._cjc_temp_c = self.hardware.adam4011_t1.read_cjc_temperature()
-            except Exception as exc:  # noqa: BLE001
-                log.bind(error=str(exc)).debug("CJC poll skipped")
-        self._tick_counter += 1
-
         if mode is StandMode.VTA:
             emf_1 = self.hardware.adam4011_t1.read_data()
             out_v = self.heater.step(now_ts)
@@ -183,8 +193,32 @@ class AcquisitionLoop(QtCore.QThread):
         while self._running:
             try:
                 sample = self._poll_once()
+                self._consecutive_errors = 0
                 self.sample_ready.emit(sample)
             except Exception as exc:  # noqa: BLE001
-                log.bind(error=str(exc)).error("Acquisition loop read error")
+                self._consecutive_errors += 1
+                log.opt(exception=True).bind(
+                    mode=str(config.mode),
+                    port=config.comport,
+                    consecutive_errors=self._consecutive_errors,
+                    error=repr(exc),
+                ).error("Acquisition loop read error")
                 self.error_occurred.emit(str(exc))
+                if (
+                    self._consecutive_errors >= 5
+                    and not config.is_test_mode
+                    and self.hardware.connected
+                ):
+                    try:
+                        log.bind(port=config.comport).warning(
+                            "Attempting automatic RS-485 port reopen after repeated errors"
+                        )
+                        self.hardware.bus.close()
+                        time.sleep(0.3)
+                        self.hardware.bus.open(config.comport)
+                        self._consecutive_errors = 0
+                    except Exception as re_exc:  # noqa: BLE001
+                        log.opt(exception=True).bind(
+                            port=config.comport, error=repr(re_exc)
+                        ).error("Automatic RS-485 port reopen failed")
                 time.sleep(0.5)

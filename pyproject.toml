@@ -1,6 +1,6 @@
 [project]
 name = "fusion-collection"
-version = "0.3.0"
+version = "0.3.1"
 description = "Единое приложение сбора данных термического анализа (ВТА и ДТА) и управления нагревом"
 authors = [{ name = "Ilya O. Yurev", email = "i.o.yurev@yandex.ru" }]
 license = { text = "GPL-3.0-or-later" }

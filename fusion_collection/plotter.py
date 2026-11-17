@@ -63,6 +63,9 @@ class LivePlotPanel(QtWidgets.QWidget):
             self.cb_xaxis.currentIndexChanged.connect(self._on_xaxis_changed)
             ctrl_row.addWidget(self.cb_xaxis)
 
+        self.cb_grid = QtWidgets.QCheckBox("Сетка")
+        self.cb_grid.setChecked(False)
+        ctrl_row.addWidget(self.cb_grid)
         ctrl_row.addStretch()
         self.lbl_coords = QtWidgets.QLabel("Курсор: —")
         self.lbl_coords.setStyleSheet("font-family: Consolas, monospace;")
@@ -70,7 +73,10 @@ class LivePlotPanel(QtWidgets.QWidget):
         self.layout_box.addLayout(ctrl_row)
 
         self.plot_widget = pg.PlotWidget()
-        self.plot_widget.showGrid(x=True, y=True, alpha=0.3)
+        self.plot_widget.showGrid(x=False, y=False, alpha=0.3)
+        self.cb_grid.toggled.connect(
+            lambda checked: self.plot_widget.showGrid(x=checked, y=checked, alpha=0.3)
+        )
         self.layout_box.addWidget(self.plot_widget, 1)
 
         p_item = self.plot_widget.getPlotItem()

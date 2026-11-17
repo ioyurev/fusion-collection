@@ -24,7 +24,7 @@ from fusion_collection.calibration_manager import (
     get_calibration_manager,
     get_thermocouple_manager,
 )
-from fusion_collection.config import APPDATA_PATH, config
+from fusion_collection.config import APPDATA_PATH, CONFIG_PATH, config
 from fusion_collection.dialogs import (
     CalibrationManagerDialog,
     ConfigDialog,
@@ -49,6 +49,11 @@ class MainWindow(QtWidgets.QMainWindow):
     def __init__(self) -> None:
         super().__init__()
         self.resize(1024, 680)
+        log.bind(
+            version=VERSION,
+            config_path=str(CONFIG_PATH),
+            **config.model_dump(mode="json"),
+        ).info("Fusion Collection MainWindow initialized")
         self.hardware = HardwareManager()
         self.acq_loop = AcquisitionLoop(self.hardware, parent=self)
         self.session: MeasurementSession = self._create_monitoring_session()
@@ -433,7 +438,9 @@ class MainWindow(QtWidgets.QMainWindow):
         try:
             mismatches = self.hardware.inspect_configurations(mode=config.mode)
         except Exception as exc:  # noqa: BLE001
-            log.bind(error=str(exc)).warning("Configuration inspection failed")
+            log.opt(exception=True).bind(
+                mode=str(config.mode), error=repr(exc)
+            ).warning("Configuration inspection failed")
             mismatches = []
 
         if mismatches:
@@ -529,12 +536,32 @@ class MainWindow(QtWidgets.QMainWindow):
         try:
             self.session.reserve_file(target_path)
         except OSError as exc:
+            log.opt(exception=True).bind(path=str(target_path), error=repr(exc)).error(
+                "Failed to reserve measurement file (.fus)"
+            )
             QtWidgets.QMessageBox.critical(
                 self,
                 "Ошибка резервирования файла",
                 f"Не удалось создать и заблокировать файл '{target_path}':\n{exc}",
             )
             return
+        log.bind(
+            mode=str(self.session.mode),
+            sample=self.session.sample,
+            operator=self.session.operator,
+            sample_mass_mg=self.session.sample_mass_mg,
+            crucible=self.session.crucible,
+            atmosphere=self.session.atmosphere,
+            sensor_t1=(self.session.sensor_t1.name if self.session.sensor_t1 else None),
+            sensor_t2=(self.session.sensor_t2.name if self.session.sensor_t2 else None),
+            calibration=(
+                self.session.calibration_t1.name
+                if self.session.calibration_t1
+                else None
+            ),
+            reserved_path=str(target_path),
+            comment=self.session.comment,
+        ).info("Created and reserved new measurement session (.fus)")
         self.lbl_sample.setText(f"<b>{self.session.sample}</b>")
         self._update_file_link_label()
         self.lbl_operator.setText(self.session.operator)
@@ -548,9 +575,30 @@ class MainWindow(QtWidgets.QMainWindow):
     def _on_start_recording_clicked(self) -> None:
         if self.session.reserved_path is None:
             return
+        try:
+            cjc_val = self.acq_loop.refresh_cjc_once()
+            self.session.update_cjc(cjc_val)
+        except Exception as exc:  # noqa: BLE001
+            log.opt(exception=True).bind(error=repr(exc)).error(
+                "Aborting measurement recording start due to CJC read failure"
+            )
+            QtWidgets.QMessageBox.critical(
+                self,
+                "Ошибка измерения холодного спая (CJC)",
+                f"Не удалось считать температуру холодного спая ($AA3):\n{exc}\n\n"
+                "Запись измерения отменена.",
+            )
+            return
         self.plot_panel.clear()
         self.plot_panel.set_recording_active(True)
         self.session.start_recording()
+        log.bind(
+            mode=str(self.session.mode),
+            sample=self.session.sample,
+            reserved_path=str(self.session.reserved_path),
+            cjc_temp_c=self.session.cjc_t1.temperature,
+            e_cold_mv=self.session.cjc_t1.e_cold,
+        ).info("Started measurement recording")
         self.btn_rec_start.setEnabled(False)
         self.btn_rec_stop.setEnabled(True)
 
@@ -558,6 +606,15 @@ class MainWindow(QtWidgets.QMainWindow):
         if not self.session.recording_enabled:
             return
         self.session.stop_recording()
+        dur_s = 0.0
+        if self.session.time_list:
+            *_, dur_s = self.session.time_list
+        log.bind(
+            mode=str(self.session.mode),
+            sample=self.session.sample,
+            points=len(self.session.time_list),
+            duration_sec=dur_s,
+        ).info("Stopped measurement recording")
         self.plot_panel.set_recording_active(False)
         self.btn_rec_start.setEnabled(False)
         self.btn_rec_stop.setEnabled(False)
@@ -579,6 +636,15 @@ class MainWindow(QtWidgets.QMainWindow):
         try:
             locked_saved = self.session.finalize_locked_file()
             if locked_saved is not None:
+                dur_s = 0.0
+                if self.session.time_list:
+                    *_, dur_s = self.session.time_list
+                log.bind(
+                    path=str(locked_saved),
+                    sample=self.session.sample,
+                    points=len(self.session.time_list),
+                    duration_sec=dur_s,
+                ).info("Saved measurement file (.fus)")
                 config.last_save_measurement_index += 1
                 config.last_save_dir = locked_saved.parent
                 config.update()
@@ -589,7 +655,9 @@ class MainWindow(QtWidgets.QMainWindow):
                         f"Запись завершена.\nДанные успешно сохранены в файл:\n{locked_saved}",
                     )
         except (OSError, ValueError) as exc:
-            log.bind(error=str(exc)).error("Failed to save measurement")
+            log.opt(exception=True).bind(
+                path=str(self.session.reserved_path), error=repr(exc)
+            ).error("Failed to save measurement")
             if notify_user:
                 QtWidgets.QMessageBox.critical(
                     self,
@@ -601,6 +669,10 @@ class MainWindow(QtWidgets.QMainWindow):
         prev_mode = config.mode
         dlg = ConfigDialog(parent=self)
         if dlg.exec() == QtWidgets.QDialog.DialogCode.Accepted:
+            log.bind(
+                prev_mode=str(prev_mode),
+                **config.model_dump(mode="json"),
+            ).info("Updated stand configuration from Settings dialog")
             self.session = self._create_monitoring_session(
                 sample=self.session.sample,
                 operator=config.operator,

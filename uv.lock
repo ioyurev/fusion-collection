@@ -126,7 +126,7 @@ wheels = [
 
 [[package]]
 name = "fusion-collection"
-version = "0.3.0"
+version = "0.3.1"
 source = { editable = "." }
 dependencies = [
     { name = "fusion-common" },
@@ -177,8 +177,8 @@ dev = [
 
 [[package]]
 name = "fusion-common"
-version = "0.7.2"
-source = { git = "ssh://git@gitflic.ru/i-o-yurev/fusion-common.git#ec036735b31fbf586f2a696597292b2929789497" }
+version = "0.7.3"
+source = { git = "ssh://git@gitflic.ru/i-o-yurev/fusion-common.git#07e36d421ecf5813f69c9548f201ac41015da9d7" }
 dependencies = [
     { name = "loguru" },
     { name = "numpy" },

@@ -34,7 +34,7 @@ SAFE_ZERO_OFFSET_V: Final[float] = 0.001
 
 # Порог детектирования обрыва термопары в диапазоне ±50 mV (насыщение 16-бит АЦП = 65.521 мВ)
 OPEN_THERMOCOUPLE_THRESHOLD_MV: Final[float] = 65.5
-DISCOVERY_TIMEOUT_SEC: Final[float] = 0.15
+DISCOVERY_TIMEOUT_SEC: Final[float] = 0.5
 
 
 def get_serial_ports() -> list[str]:
@@ -138,14 +138,22 @@ class Adam4011Module:
         self.module_config: Adam4011Config | None = None
 
     def check_identity(self) -> bool:
-        resp = self.bus.query_str(b"$" + self.addr_bytes + b"M")
         expected_prefix = f"!{self.address:02X}"
-        if resp.startswith(expected_prefix) and self.model_code in resp:
-            self.name = resp
-            fw_resp = self.bus.query_str(b"$" + self.addr_bytes + b"F")
-            if fw_resp.startswith(expected_prefix):
-                self.firmware = fw_resp[3:]
-            return True
+        for attempt in range(1, 3):
+            resp = self.bus.query_str(b"$" + self.addr_bytes + b"M")
+            log.bind(
+                module="ADAM-4011",
+                address=f"{self.address:02X}h",
+                attempt=attempt,
+                response=resp,
+            ).debug("Probed ADAM-4011 identity ($AAM)")
+            if resp.startswith(expected_prefix) and self.model_code in resp:
+                self.name = resp
+                fw_resp = self.bus.query_str(b"$" + self.addr_bytes + b"F")
+                if fw_resp.startswith(expected_prefix):
+                    self.firmware = fw_resp[3:]
+                return True
+            time.sleep(0.05)
         return False
 
     def read_config(self) -> Adam4011Config:
@@ -159,14 +167,18 @@ class Adam4011Module:
 
     def read_cjc_temperature(self) -> float:
         resp = self.bus.query_str(b"$" + self.addr_bytes + b"3")
-        if resp.startswith(">") and len(resp) >= 8:
+        if resp[:1] in (">", "!") and len(resp) >= 2:
             return float(resp[1:8].strip())
-        raise ValueError(f"Некорректный ответ CJC ($AA3) от ADAM-4011: {resp!r}")
+        raise ValueError(
+            f"Некорректный ответ CJC ($AA3) от ADAM-4011 ({self.address:02X}h): {resp!r}"
+        )
 
     def read_data(self) -> float:
         resp = self.bus.query_str(b"#" + self.addr_bytes)
         if not resp.startswith(">"):
-            raise ValueError(f"Некорректный ответ #AA от ADAM-4011: {resp!r}")
+            raise ValueError(
+                f"Некорректный ответ #AA от ADAM-4011 ({self.address:02X}h): {resp!r}"
+            )
         return float(resp[1:].strip())
 
     @staticmethod
@@ -188,7 +200,7 @@ class Adam4011Module:
         resp = self.bus.query_str(b"$" + self.addr_bytes + b"4")
         parsed = self.parse_sync_response(resp)
         if not parsed.is_fresh:
-            log.bind(address=self.address).warning(
+            log.bind(address=f"{self.address:02X}h", raw_response=resp).warning(
                 "ADAM-4011 returned stale synchronized sample (status=0)"
             )
         return parsed.value_mv
@@ -207,11 +219,19 @@ class Adam4021Module:
         self.module_config: Adam4021Config | None = None
 
     def check_identity(self) -> bool:
-        resp = self.bus.query_str(b"$" + self.addr_bytes + b"M")
         expected_prefix = f"!{self.address:02X}"
-        if resp.startswith(expected_prefix) and self.model_code in resp:
-            self.name = resp
-            return True
+        for attempt in range(1, 3):
+            resp = self.bus.query_str(b"$" + self.addr_bytes + b"M")
+            log.bind(
+                module="ADAM-4021",
+                address=f"{self.address:02X}h",
+                attempt=attempt,
+                response=resp,
+            ).debug("Probed ADAM-4021 identity ($AAM)")
+            if resp.startswith(expected_prefix) and self.model_code in resp:
+                self.name = resp
+                return True
+            time.sleep(0.05)
         return False
 
     def read_config(self) -> Adam4021Config:
@@ -253,19 +273,30 @@ class HardwareManager:
     def _probe_port(self, port: str, mode: str) -> bool:
         try:
             self.bus.open(port)
+            time.sleep(0.05)
+            ok_t1 = self.adam4011_t1.check_identity()
             if mode == "vta":
-                ok = (
-                    self.adam4011_t1.check_identity() and self.adam4021.check_identity()
-                )
+                ok_second = self.adam4021.check_identity()
+                second_label = f"ADAM-4021@{self.adam4021.address:02X}h"
             else:
-                ok = (
-                    self.adam4011_t1.check_identity()
-                    and self.adam4011_t2.check_identity()
-                )
+                ok_second = self.adam4011_t2.check_identity()
+                second_label = f"ADAM-4011_T2@{self.adam4011_t2.address:02X}h"
+            ok = ok_t1 and ok_second
+            log.bind(
+                port=port,
+                mode=mode,
+                t1_addr=f"{self.adam4011_t1.address:02X}h",
+                t1_ok=ok_t1,
+                second_module=second_label,
+                second_ok=ok_second,
+            ).info("Completed ADAM port probe")
             if not ok:
                 self.bus.close()
             return ok
         except (serial.SerialException, OSError):
+            log.opt(exception=True).bind(port=port, mode=mode).warning(
+                "Serial exception while probing COM port"
+            )
             self.bus.close()
             return False
 
@@ -273,10 +304,21 @@ class HardwareManager:
         active_mode = mode or config.mode
         self.sync_addresses_from_config()
         if config.is_test_mode:
+            log.bind(mode=active_mode).info(
+                "Test mode enabled, skipping hardware discovery"
+            )
             self.connected = True
             return True
 
         available_ports = get_serial_ports()
+        log.bind(
+            mode=active_mode,
+            configured_port=config.comport,
+            available_ports=available_ports,
+            t1_addr=f"{self.adam4011_t1.address:02X}h",
+            t2_addr=f"{self.adam4011_t2.address:02X}h",
+            ao_addr=f"{self.adam4021.address:02X}h",
+        ).info("Starting ADAM hardware discovery")
         candidates: list[str] = []
         if config.comport in available_ports:
             candidates.append(config.comport)
@@ -292,6 +334,9 @@ class HardwareManager:
                 self.connected = True
                 return True
 
+        log.bind(mode=active_mode, candidates=candidates).error(
+            "ADAM hardware discovery failed on all candidate COM ports"
+        )
         self.connected = False
         return False
 
@@ -306,6 +351,16 @@ class HardwareManager:
         mismatches: list[ModuleConfigMismatch] = []
         cfg_t1 = self.adam4011_t1.read_config()
         issues_t1 = cfg_t1.check_requirements()
+        log.bind(
+            module="ADAM-4011_T1",
+            address=cfg_t1.address,
+            input_range=cfg_t1.input_range.value,
+            baudrate=cfg_t1.baudrate.bps(),
+            integration_time=cfg_t1.integration_time.description(),
+            data_format=cfg_t1.data_format.value,
+            checksum=cfg_t1.checksum.value,
+            issues=issues_t1,
+        ).info("Inspected ADAM-4011 T1 configuration ($AA2)")
         if issues_t1:
             exp_t1 = Adam4011Config.expected(self.adam4011_t1.address)
             mismatches.append(
@@ -323,6 +378,16 @@ class HardwareManager:
         if active_mode == "vta":
             cfg_ao = self.adam4021.read_config()
             issues_ao = cfg_ao.check_requirements()
+            log.bind(
+                module="ADAM-4021",
+                address=cfg_ao.address,
+                output_range=cfg_ao.output_range.value,
+                baudrate=cfg_ao.baudrate.bps(),
+                slew_rate=cfg_ao.slew_rate.value,
+                data_format=cfg_ao.data_format.value,
+                checksum=cfg_ao.checksum.value,
+                issues=issues_ao,
+            ).info("Inspected ADAM-4021 configuration ($AA2)")
             if issues_ao:
                 exp_ao = Adam4021Config.expected(self.adam4021.address)
                 mismatches.append(
@@ -340,6 +405,16 @@ class HardwareManager:
         else:
             cfg_t2 = self.adam4011_t2.read_config()
             issues_t2 = cfg_t2.check_requirements()
+            log.bind(
+                module="ADAM-4011_T2",
+                address=cfg_t2.address,
+                input_range=cfg_t2.input_range.value,
+                baudrate=cfg_t2.baudrate.bps(),
+                integration_time=cfg_t2.integration_time.description(),
+                data_format=cfg_t2.data_format.value,
+                checksum=cfg_t2.checksum.value,
+                issues=issues_t2,
+            ).info("Inspected ADAM-4011 T2 configuration ($AA2)")
             if issues_t2:
                 exp_t2 = Adam4011Config.expected(self.adam4011_t2.address)
                 mismatches.append(
