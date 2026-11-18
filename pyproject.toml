@@ -49,48 +49,54 @@ paths = ["fusion_collection", "tests", "vulture_whitelist.py"]
 [tool.ruff.lint]
 select = ["ALL"]
 ignore = [
-    "ANN401",
-    "C901",
-    "COM812",  # Конфликтует с ruff-format
-    "CPY001",  # Лицензия размещена в LICENSE.md
-    "D100",
-    "D101",
-    "D102",
-    "D103",
-    "D104",
-    "D105",
-    "D107",
-    "D203",    # Конфликтует с D211
-    "D213",    # Конфликтует с D212
-    "E501",    # Длинные кириллические строки интерфейса и сообщений
-    "EM101",
-    "EM102",
-    "FBT001",
-    "FBT002",
-    "FBT003",
-    "N802",    # Переопределения методов Qt
-    "N803",
-    "N815",
-    "PLC0415", # Ленивые импорты после сплэш-экрана и платформные импорты (msvcrt)
-    "PLR0911",
-    "PLR0912",
-    "PLR0913",
-    "PLR0915",
-    "PLR0917",
-    "PLR2004",
-    "PLW0108",
-    "RUF001",  # Кириллические символы в строках
-    "RUF002",  # Кириллические символы в докстрингах
-    "RUF003",  # Кириллические символы в комментариях
-    "RUF102",  # Маркеры проектных AST-чекеров (# noqa: PU001, # noqa: MI001)
-    "S603",
-    "S607",
-    "TRY003",
+    "ANN401",  # any-type: разрешает typing.Any при работе с полиморфными обёртками Qt/PyQtGraph и метаданными
+    "C901",    # complex-structure: диалоги, главный экран и обработчик опроса содержат последовательную логику UI/RS-485
+    "COM812",  # missing-trailing-comma: конфликтует с правилами расстановки запятых форматтера ruff-format
+    "CPY001",  # missing-copyright-notice: лицензия GPLv3 оформлена централизованно в LICENSE.md и LICENSE.ru.md
+    "D100",    # undocumented-public-module: избыточный docstring на уровне очевидных модулей приложения и тестов
+    "D101",    # undocumented-public-class: избыточный docstring для стандартных виджетов и диалогов Qt
+    "D102",    # undocumented-public-method: избыточный docstring для стандартных слотов и методов Qt
+    "D103",    # undocumented-public-function: избыточный docstring для очевидных вспомогательных и тестовых функций
+    "D104",    # undocumented-public-package: __init__.py содержит только реэкспорт версии
+    "D105",    # undocumented-magic-method: стандартные магические методы не требуют docstring
+    "D107",    # undocumented-public-init: параметры конструкторов задокументированы строгими аннотациями типов
+    "D203",    # incorrect-blank-line-before-class: взаимоисключающе конфликтует с правилом D211
+    "D213",    # multi-line-summary-second-line: взаимоисключающе конфликтует с правилом D212
+    "E501",    # line-too-long: длинные кириллические строки интерфейса и сообщений об ошибках не переносятся принудительно
+    "EM101",   # raw-string-in-exception: кириллические сообщения об ошибках читаемее прямо в конструкторе raise
+    "EM102",   # f-string-in-exception: f-строки с адресом модуля и сырым ответом удобнее формировать прямо в raise
+    "FBT001",  # boolean-type-hint-positional-argument: слоты и методы Qt требуют позиционных bool-параметров
+    "FBT002",  # boolean-default-value-positional-argument: совместимость с существующими флагами по умолчанию (notify_user=False и др.)
+    "FBT003",  # boolean-positional-value-in-call: стандартные вызовы API Qt принимают позиционные bool (setEnabled, showGrid)
+    "N802",    # invalid-function-name: переопределения виртуальных методов Qt используют camelCase (closeEvent и др.)
+    "N803",    # invalid-argument-name: совместимость с унаследованными сигнатурами методов
+    "N815",    # mixed-case-variable-in-class-scope: совместимость с историческими именами полей конфигурации и моделей
+    "PLC0415", # import-outside-top-level: ленивые импорты после показа сплэш-экрана и системный импорт msvcrt под Windows
+    "PLR0911", # too-many-return-statements: парсеры ответов RS-485 и валидаторы используют ранние возвраты
+    "PLR0912", # too-many-branches: диспетчеризация режимов ВТА/ДТА и событий интерфейса
+    "PLR0913", # too-many-arguments: конструктор сессии измерения и диалоги принимают полный набор полей паспорта
+    "PLR0915", # too-many-statements: методы _build_ui и диалоги компонуют все элементы интерфейса в одном блоке
+    "PLR0917", # too-many-positional-arguments: совместимость с унаследованными сигнатурами и вызовами Qt
+    "PLR2004", # magic-value-comparison: аппаратные пороги, таймауты, адреса протокола ADAM и размеры UI естественны на месте
+    "PLW0108", # unnecessary-lambda: в Qt-подключениях clicked.connect(lambda: ...) фиксируются аргументы и отложенный вызов
+    "RUF001",  # ambiguous-unicode-character-string: ложное срабатывание на кириллицу в строках рядом с латиницей и единицами
+    "RUF002",  # ambiguous-unicode-character-docstring: ложное срабатывание на русскоязычные docstrings
+    "RUF003",  # ambiguous-unicode-character-comment: ложное срабатывание на русскоязычные комментарии
+    "RUF102",  # invalid-noqa: ложно принимает директивы проектных AST-чекеров (# noqa: PU001, # noqa: MI001) за невалидные
+    "S603",    # subprocess-without-shell-equals-true: единая политика для вызовов внешних CLI-утилит без shell=True
+    "S607",    # start-process-with-partial-path: единая политика запуска внешних утилит через PATH
+    "TRY003",  # raise-vanilla-args: подробные русскоязычные сообщения об ошибках передаются напрямую в стандартные исключения
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/*.py" = ["INP001", "S101", "SLF001"]
-"vulture_whitelist.py" = ["INP001"]
+"tests/*.py" = [
+    "INP001", # implicit-namespace-package: каталог тестов tests/ не является импортируемым пакетом и не требует __init__.py
+    "S101",   # assert: штатный оператор утверждений в тестах pytest
+    "SLF001", # private-member-access: тесты могут проверять внутреннее состояние и вспомогательные функции модулей
+]
+"vulture_whitelist.py" = [
+    "INP001", # implicit-namespace-package: корневой файл белого списка vulture не является пакетом и не требует __init__.py
+]
 
 [tool.ruff.lint.flake8-type-checking]
 runtime-evaluated-base-classes = ["pydantic.BaseModel"]
