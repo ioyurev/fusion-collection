@@ -24,33 +24,62 @@ jobs:
       - name: Map fusion-common Git URL to HTTPS for CI
         shell: pwsh
         run: |
+          $ErrorActionPreference = 'Stop'
           git config --global url."https://github.com/ioyurev/fusion-common.git".insteadOf "ssh://git@gitflic.ru/i-o-yurev/fusion-common.git"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Install dependencies and run tests
         shell: pwsh
         run: |
+          $ErrorActionPreference = 'Stop'
           uv sync
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           uv run pytest
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Ensure Pandoc is available
         shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          $ErrorActionPreference = 'Stop'
           if (-not (Get-Command pandoc -ErrorAction SilentlyContinue)) {
-            choco install pandoc --no-progress -y
+            $headers = @{
+              'User-Agent'    = 'fusion-release-workflow'
+              'Authorization' = "Bearer $env:GH_TOKEN"
+            }
+            $release = Invoke-RestMethod -Uri 'https://api.github.com/repos/jgm/pandoc/releases/latest' -Headers $headers
+            $asset = $release.assets | Where-Object { $_.name -match '^pandoc-.*-windows-x86_64\.zip$' } | Select-Object -First 1
+            if (-not $asset) { throw 'Pandoc windows-x86_64 zip asset not found in latest release' }
+            Invoke-WebRequest -Uri $asset.browser_download_url -OutFile pandoc.zip
+            Expand-Archive -Path pandoc.zip -DestinationPath pandoc_extracted -Force
+            $pandocBin = Get-ChildItem -Path 'pandoc_extracted' -Recurse -Filter 'pandoc.exe' | Select-Object -First 1
+            if (-not $pandocBin) { throw 'pandoc.exe not found inside extracted archive' }
+            $pandocBin.Directory.FullName | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+            $env:PATH = "$($pandocBin.Directory.FullName);$env:PATH"
           }
+          pandoc --version
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Build PyInstaller bundle, HTML manual, ZIP and Inno Setup installer
         shell: pwsh
         run: |
+          $ErrorActionPreference = 'Stop'
+          function Invoke-Checked([scriptblock]$Cmd) {
+            & $Cmd
+            if ($LASTEXITCODE -ne 0) { throw "Command failed with exit code $LASTEXITCODE" }
+          }
           New-Item -ItemType Directory -Force -Path pyinstaller | Out-Null
           Push-Location pyinstaller
-          uv run fusion-splash --subtitle "Thermal Data Collection" --bg-color "#FD700D" --svg-out ../assets/icon.svg --icon-out icon.ico --version-from .. --out splash.png
-          uv run pyinstaller ../fusion_collection/__main__.py --noconsole -i icon.ico --splash splash.png --collect-data fusion_common --collect-data fusion_collection -n fusion-collection --noconfirm --exclude-module PyQt6 --exclude-module PyQt5 --exclude-module scipy
-          uv run fusion-packaging version-file --package fusion-collection --product "Fusion Collection" --description "Fusion Collection (VTA & DTA)" --version-from .. --out version_text_file
-          uv run pyi-set_version version_text_file dist/fusion-collection/fusion-collection.exe
-          uv run fusion-docs --package fusion_collection --out-dir dist/fusion-collection
-          uv run fusion-packaging zip-dist --package fusion-collection --version-from .. --dist-root dist
-          uv run fusion-packaging installer --package fusion-collection --product "Fusion Collection" --version-from .. --dist-root dist --icon icon.ico
+          Invoke-Checked { uv run fusion-splash --subtitle "Thermal Data Collection" --bg-color "#FD700D" --svg-out ../assets/icon.svg --icon-out icon.ico --version-from .. --out splash.png }
+          Invoke-Checked { uv run pyinstaller ../fusion_collection/__main__.py --noconsole -i icon.ico --splash splash.png --collect-data fusion_common --collect-data fusion_collection -n fusion-collection --noconfirm --exclude-module PyQt6 --exclude-module PyQt5 --exclude-module scipy }
+          Invoke-Checked { uv run fusion-packaging version-file --package fusion-collection --product "Fusion Collection" --description "Fusion Collection (VTA & DTA)" --version-from .. --out version_text_file }
+          Invoke-Checked { uv run pyi-set_version version_text_file dist/fusion-collection/fusion-collection.exe }
+          Invoke-Checked { uv run fusion-docs --package fusion_collection --out-dir dist/fusion-collection }
+          if (-not (Test-Path 'dist/fusion-collection/MANUAL.html')) { throw 'MANUAL.html was not generated' }
+          if (-not (Test-Path 'dist/fusion-collection/LICENSE.html')) { throw 'LICENSE.html was not generated' }
+          Invoke-Checked { uv run fusion-packaging zip-dist --package fusion-collection --version-from .. --dist-root dist }
+          Invoke-Checked { uv run fusion-packaging installer --package fusion-collection --product "Fusion Collection" --version-from .. --dist-root dist --icon icon.ico }
           Pop-Location
 
       - name: Upload installer and portable archive artifacts
