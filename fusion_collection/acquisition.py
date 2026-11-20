@@ -25,7 +25,8 @@ class LiveSample:
     heater_output_v: float = 0.0
     cjc_temp_c: float = 25.0
     sampling_rate_hz: float = 10.0
-    open_thermocouple_warning: bool = False
+    open_tc_1: bool = False
+    open_tc_2: bool = False
 
 
 class HeaterRamp:
@@ -80,6 +81,33 @@ class AcquisitionLoop(QtCore.QThread):
         self._last_ts: float | None = None
         self._cjc_temp_c: float = 25.0
         self._consecutive_errors: int = 0
+        self._last_open_tc_state: tuple[bool, bool] = (False, False)
+
+    def report_open_tc_transition(
+        self,
+        mode: StandMode,
+        open_1: bool,
+        open_2: bool,
+        emf_1: float,
+        emf_2: float = 0.0,
+    ) -> None:
+        """Логирует смену состояния обрыва цепи термопар только по фронту перехода."""
+        state = (open_1, open_2)
+        if state == self._last_open_tc_state:
+            return
+        self._last_open_tc_state = state
+        if open_1 or open_2:
+            log.bind(
+                mode=str(mode),
+                open_tc_1=open_1,
+                open_tc_2=open_2,
+                emf_1=emf_1,
+                emf_2=emf_2,
+            ).warning("Open thermocouple detected")
+        else:
+            log.bind(mode=str(mode), emf_1=emf_1, emf_2=emf_2).info(
+                "Thermocouple circuit restored"
+            )
 
     def refresh_cjc_once(self) -> float:
         """Считывает температуру холодного спая ($AA3) однократно вне горячего цикла (без фоллбека)."""
@@ -92,6 +120,7 @@ class AcquisitionLoop(QtCore.QThread):
         return self._cjc_temp_c
 
     def start_monitoring(self) -> None:
+        self._last_open_tc_state = (False, False)
         try:
             self.refresh_cjc_once()
         except Exception as exc:  # noqa: BLE001
@@ -105,6 +134,7 @@ class AcquisitionLoop(QtCore.QThread):
 
     def stop_monitoring(self) -> None:
         self._running = False
+        self._last_open_tc_state = (False, False)
         self.heater.set_enabled(False)
         self.heater.reset()
         if self.isRunning():
@@ -149,18 +179,16 @@ class AcquisitionLoop(QtCore.QThread):
                 heater_output_v=round(out_v, 3),
                 cjc_temp_c=25.0,
                 sampling_rate_hz=rate_hz,
-                open_thermocouple_warning=False,
+                open_tc_1=False,
+                open_tc_2=False,
             )
 
         if mode is StandMode.VTA:
             emf_1 = self.hardware.adam4011_t1.read_data()
             out_v = self.heater.step(now_ts)
             self.hardware.adam4021.set_output(out_v)
-            open_warn = is_thermocouple_open(emf_1)
-            if open_warn:
-                log.bind(emf_mv=emf_1).warning(
-                    "Open thermocouple detected in VTA mode (heating NOT interrupted)"
-                )
+            open_1 = is_thermocouple_open(emf_1)
+            self.report_open_tc_transition(StandMode.VTA, open_1, False, emf_1)
             return LiveSample(
                 timestamp=now_ts,
                 mode=StandMode.VTA,
@@ -168,17 +196,16 @@ class AcquisitionLoop(QtCore.QThread):
                 heater_output_v=round(out_v, 3),
                 cjc_temp_c=self._cjc_temp_c,
                 sampling_rate_hz=rate_hz,
-                open_thermocouple_warning=open_warn,
+                open_tc_1=open_1,
+                open_tc_2=False,
             )
 
         self.hardware.bus.trigger_synchronized_sampling()
         emf_1 = self.hardware.adam4011_t1.read_sync_data()
         emf_2 = self.hardware.adam4011_t2.read_sync_data()
-        open_warn = is_thermocouple_open(emf_1) or is_thermocouple_open(emf_2)
-        if open_warn:
-            log.bind(emf_1=emf_1, emf_2=emf_2).warning(
-                "Open thermocouple detected in DTA mode"
-            )
+        open_1 = is_thermocouple_open(emf_1)
+        open_2 = is_thermocouple_open(emf_2)
+        self.report_open_tc_transition(StandMode.DTA, open_1, open_2, emf_1, emf_2)
         return LiveSample(
             timestamp=now_ts,
             mode=StandMode.DTA,
@@ -186,7 +213,8 @@ class AcquisitionLoop(QtCore.QThread):
             emf_2_mv=emf_2,
             cjc_temp_c=self._cjc_temp_c,
             sampling_rate_hz=rate_hz,
-            open_thermocouple_warning=open_warn,
+            open_tc_1=open_1,
+            open_tc_2=open_2,
         )
 
     def run(self) -> None:

@@ -23,8 +23,14 @@ from fusion_common import (
 from fusion_common import (
     __version__ as common_version,
 )
+from loguru import logger as log
 
 from fusion_collection.config import StandMode, config
+from fusion_collection.recovery import (
+    StagingDirWriter,
+    get_recovery_root,
+    pack_staging_dir_to_fus,
+)
 from fusion_collection.version import VERSION
 
 if TYPE_CHECKING:
@@ -58,6 +64,7 @@ class MeasurementSession:
         sensor_t1: SensorSpec | None = None,
         sensor_t2: SensorSpec | None = None,
         calibration_t1: CalibrationSpec | None = None,
+        recovery_root: Path | None = None,
     ) -> None:
         self.mode = mode
         self.sample = sample
@@ -78,12 +85,23 @@ class MeasurementSession:
         self._rate_window: deque[tuple[float, float]] = deque(maxlen=50)
         self.reserved_path: Path | None = None
         self._locked_fh: IO[bytes] | None = None
+        self._recovery_root: Path = get_recovery_root(recovery_root)
+        self._staging_writer: StagingDirWriter | None = None
+        self._staging_write_failed: bool = False
         self.time_list: list[float] = []
         self.emf_1_list: list[float] = []
         self.emf_2_list: list[float] = []
         self.temp_1_list: list[float] = []
         self.dta_list: list[float] = []
         self.heater_out_list: list[float] = []
+
+    @property
+    def active_staging_dir(self) -> Path | None:
+        return (
+            self._staging_writer.staging_dir
+            if self._staging_writer is not None
+            else None
+        )
 
     def update_cjc(self, cjc_temp_c: float) -> None:
         if self._last_cjc_temp_c == cjc_temp_c:
@@ -93,6 +111,13 @@ class MeasurementSession:
             self.cjc_t1 = CjcData.from_sensor(cjc_temp_c, self.sensor_t1)
         else:
             self.cjc_t1 = CjcData(temperature=cjc_temp_c, e_cold=0.0)
+        if self._staging_writer is not None and not self._staging_write_failed:
+            try:
+                self._staging_writer.update_manifest(self.build_manifest())
+            except OSError as exc:
+                log.bind(error=str(exc)).warning(
+                    "Failed to update manifest.json in staging directory"
+                )
 
     def eval_temp_t1(self, emf_1_mv: float) -> float:
         return float(
@@ -105,11 +130,29 @@ class MeasurementSession:
         )
 
     def start_recording(self) -> None:
+        if self._staging_writer is not None:
+            self._staging_writer.cleanup()
+            self._staging_writer = None
         self.clear()
         self.recording_enabled = True
+        self._staging_write_failed = False
+        try:
+            self._staging_writer = StagingDirWriter.create(
+                recovery_root=self._recovery_root,
+                manifest=self.build_manifest(),
+                columns=self.column_order(),
+                target_path=self.reserved_path,
+            )
+        except OSError as exc:
+            log.opt(exception=True).bind(error=repr(exc)).error(
+                "Failed to initialize staging directory in AppData"
+            )
+            self._staging_writer = None
 
     def stop_recording(self) -> None:
         self.recording_enabled = False
+        if self._staging_writer is not None:
+            self._staging_writer.close()
 
     def clear(self) -> None:
         self._t0 = None
@@ -156,9 +199,31 @@ class MeasurementSession:
         self.temp_1_list.append(temp_1_c)
         if self.mode == StandMode.VTA:
             self.heater_out_list.append(sample.heater_output_v)
+            row: tuple[float, ...] = (
+                rel_t,
+                sample.emf_1_mv,
+                temp_1_c,
+                sample.heater_output_v,
+            )
         else:
             self.emf_2_list.append(sample.emf_2_mv)
             self.dta_list.append(dta_mv)
+            row = (
+                rel_t,
+                sample.emf_1_mv,
+                sample.emf_2_mv,
+                dta_mv,
+                temp_1_c,
+            )
+
+        if self._staging_writer is not None and not self._staging_write_failed:
+            try:
+                self._staging_writer.append_row(row)
+            except OSError as exc:
+                self._staging_write_failed = True
+                log.opt(exception=True).bind(error=repr(exc)).error(
+                    "Failed to append row to staging data.csv"
+                )
 
         return EvaluatedPoint(
             rel_time_s=rel_t,
@@ -167,12 +232,9 @@ class MeasurementSession:
             heating_rate_c_min=rate_c_min,
         )
 
-    def to_record(self) -> MeasurementRecord:
-        if not self.time_list:
-            raise ValueError("Нет записанных точек для сохранения измерения")
-
+    def build_channels(self) -> list[ChannelDescriptor]:
         if self.mode == StandMode.VTA:
-            channels = [
+            return [
                 ChannelDescriptor(column=ChannelKey.TIME, label="Время", unit="s"),
                 ChannelDescriptor(column=ChannelKey.EMF_1, label="ЭДС", unit="mV"),
                 ChannelDescriptor(
@@ -190,52 +252,42 @@ class MeasurementSession:
                     unit="V",
                 ),
             ]
-            data_map: dict[str, np.ndarray] = {
-                ChannelKey.TIME: np.array(self.time_list, dtype=float),
-                ChannelKey.EMF_1: np.array(self.emf_1_list, dtype=float),
-                ChannelKey.TEMPERATURE: np.array(self.temp_1_list, dtype=float),
-                ChannelKey.HEATER_OUTPUT: np.array(self.heater_out_list, dtype=float),
-            }
-        else:
-            channels = [
-                ChannelDescriptor(column=ChannelKey.TIME, label="Время", unit="s"),
-                ChannelDescriptor(
-                    column=ChannelKey.EMF_1,
-                    label="Термопара 1 (образец)",
-                    unit="mV",
-                ),
-                ChannelDescriptor(
-                    column=ChannelKey.EMF_2,
-                    label="Термопара 2 (эталон)",
-                    unit="mV",
-                    sensor=self.sensor_t2,
-                ),
-                ChannelDescriptor(
-                    column=ChannelKey.DTA,
-                    label="ДТА",
-                    unit="mV",
-                    source_columns=[ChannelKey.EMF_1, ChannelKey.EMF_2],
-                    metadata={"exo_up": True},
-                ),
-                ChannelDescriptor(
-                    column=ChannelKey.TEMPERATURE,
-                    label="Температура образца",
-                    unit="°C",
-                    source_columns=[ChannelKey.EMF_1],
-                    sensor=self.sensor_t1,
-                    cjc=self.cjc_t1,
-                    calibration=self.calibration_t1,
-                ),
-            ]
-            data_map = {
-                ChannelKey.TIME: np.array(self.time_list, dtype=float),
-                ChannelKey.EMF_1: np.array(self.emf_1_list, dtype=float),
-                ChannelKey.EMF_2: np.array(self.emf_2_list, dtype=float),
-                ChannelKey.DTA: np.array(self.dta_list, dtype=float),
-                ChannelKey.TEMPERATURE: np.array(self.temp_1_list, dtype=float),
-            }
+        return [
+            ChannelDescriptor(column=ChannelKey.TIME, label="Время", unit="s"),
+            ChannelDescriptor(
+                column=ChannelKey.EMF_1,
+                label="Термопара 1 (образец)",
+                unit="mV",
+            ),
+            ChannelDescriptor(
+                column=ChannelKey.EMF_2,
+                label="Термопара 2 (эталон)",
+                unit="mV",
+                sensor=self.sensor_t2,
+            ),
+            ChannelDescriptor(
+                column=ChannelKey.DTA,
+                label="ДТА",
+                unit="mV",
+                source_columns=[ChannelKey.EMF_1, ChannelKey.EMF_2],
+                metadata={"exo_up": True},
+            ),
+            ChannelDescriptor(
+                column=ChannelKey.TEMPERATURE,
+                label="Температура образца",
+                unit="°C",
+                source_columns=[ChannelKey.EMF_1],
+                sensor=self.sensor_t1,
+                cjc=self.cjc_t1,
+                calibration=self.calibration_t1,
+            ),
+        ]
 
-        manifest = MeasurementManifest(
+    def column_order(self) -> list[str]:
+        return [ch.column for ch in self.build_channels()]
+
+    def build_manifest(self) -> MeasurementManifest:
+        return MeasurementManifest(
             software_version=VERSION,
             common_version=common_version,
             sample=self.sample,
@@ -245,13 +297,41 @@ class MeasurementSession:
             crucible=self.crucible,
             atmosphere=self.atmosphere,
             comment=self.comment,
-            channels=channels,
+            channels=self.build_channels(),
         )
-        return MeasurementRecord(manifest=manifest, data=data_map)
+
+    def to_record(self) -> MeasurementRecord:
+        if not self.time_list:
+            raise ValueError("Нет записанных точек для сохранения измерения")
+
+        if self.mode == StandMode.VTA:
+            data_map: dict[str, np.ndarray] = {
+                ChannelKey.TIME: np.array(self.time_list, dtype=float),
+                ChannelKey.EMF_1: np.array(self.emf_1_list, dtype=float),
+                ChannelKey.TEMPERATURE: np.array(self.temp_1_list, dtype=float),
+                ChannelKey.HEATER_OUTPUT: np.array(self.heater_out_list, dtype=float),
+            }
+        else:
+            data_map = {
+                ChannelKey.TIME: np.array(self.time_list, dtype=float),
+                ChannelKey.EMF_1: np.array(self.emf_1_list, dtype=float),
+                ChannelKey.EMF_2: np.array(self.emf_2_list, dtype=float),
+                ChannelKey.DTA: np.array(self.dta_list, dtype=float),
+                ChannelKey.TEMPERATURE: np.array(self.temp_1_list, dtype=float),
+            }
+
+        return MeasurementRecord(manifest=self.build_manifest(), data=data_map)
 
     def save(self, path: Path) -> None:
         target = path if path.suffix.lower() == ".fus" else path.with_suffix(".fus")
-        save_fus(self.to_record(), target)
+        if self._staging_writer is not None and not self._staging_write_failed:
+            self._staging_writer.close()
+            pack_staging_dir_to_fus(self._staging_writer.staging_dir, target)
+        else:
+            save_fus(self.to_record(), target)
+        if self._staging_writer is not None:
+            self._staging_writer.cleanup()
+            self._staging_writer = None
         self.has_unsaved_data = False
 
     def reserve_file(self, path: Path) -> Path:
@@ -286,7 +366,7 @@ class MeasurementSession:
             fh.close()
 
     def finalize_locked_file(self) -> Path | None:
-        """Записывает содержимое измерения в заблокированный файл .fus после остановки и снимает блокировку."""
+        """Превращает рабочую папку в заблокированный файл .fus, снимает блокировку и очищает staging."""
         fh = self._locked_fh
         out_path = self.reserved_path
         if fh is None or out_path is None:
@@ -297,21 +377,46 @@ class MeasurementSession:
             with contextlib.suppress(OSError):
                 fh.seek(0)
                 msvcrt.locking(fh.fileno(), msvcrt.LK_UNLCK, 1)
-        save_fus(self.to_record(), fh)
+        if self._staging_writer is not None and not self._staging_write_failed:
+            self._staging_writer.close()
+            pack_staging_dir_to_fus(self._staging_writer.staging_dir, fh)
+        else:
+            save_fus(self.to_record(), fh)
         with contextlib.suppress(OSError):
             os.fsync(fh.fileno())
         with contextlib.suppress(OSError):
             fh.close()
         self._locked_fh = None
+        if self._staging_writer is not None:
+            self._staging_writer.cleanup()
+            self._staging_writer = None
         self.has_unsaved_data = False
         return out_path
 
+    def discard_recording(self) -> None:
+        """Отменяет незавершённую запись, удаляя рабочую папку в AppData и 1-байтовую заглушку .fus."""
+        self.recording_enabled = False
+        if self._staging_writer is not None:
+            self._staging_writer.cleanup()
+            self._staging_writer = None
+        res_p = self.reserved_path
+        self._unlock_and_close_handle()
+        self.reserved_path = None
+        if res_p is not None:
+            with contextlib.suppress(OSError):
+                if res_p.is_file() and res_p.stat().st_size <= 1:
+                    res_p.unlink()
+        self.clear()
+
     def release_unused_reservation(self) -> None:
-        """Снимает блокировку и удаляет пустой зарезервированный файл, если запись не запускалась."""
+        """Снимает блокировку и удаляет пустой зарезервированный файл и пустую рабочую папку."""
         had_lock = self._locked_fh is not None
         res_p = self.reserved_path
         self._unlock_and_close_handle()
         self.reserved_path = None
+        if len(self.time_list) == 0 and self._staging_writer is not None:
+            self._staging_writer.cleanup()
+            self._staging_writer = None
         if (
             had_lock
             and not self.has_unsaved_data

@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from fusion_common import (
     COLLECTION_ICON_BG,
+    FUS_EXT_FILTER,
     AdditivePolynomialCalibration,
     CalibrationSpec,
     IdentityCalibration,
@@ -33,14 +35,37 @@ from fusion_collection.dialogs import (
 )
 from fusion_collection.hardware import HardwareManager
 from fusion_collection.plotter import LivePlotPanel
+from fusion_collection.recovery import (
+    find_pending_sessions,
+    pack_staging_dir_to_fus,
+    prune_invalid_sessions,
+    remove_staging_dir,
+)
 from fusion_collection.session import MeasurementSession
 from fusion_collection.thermocouple_dialogs import ThermocoupleManagerDialog
 from fusion_collection.version import VERSION
+
+if TYPE_CHECKING:
+    from fusion_collection.recovery import PendingSession
 
 
 def _format_mm_ss(seconds: float) -> str:
     total = max(0, int(seconds))
     return f"{total // 60:02d}:{total % 60:02d}"
+
+
+_OPEN_TC_ERROR_HTML = '<span style="color: #d35400;"><b>Ошибка</b></span>'
+
+
+def format_open_tc_warning(open_tc_1: bool, open_tc_2: bool) -> str:
+    """Формирует канальный текст предупреждения об обрыве термопары без вывода ЭДС."""
+    if open_tc_1 and open_tc_2:
+        return "⚠ ВНИМАНИЕ: Обрыв цепи термопар (Канал 1 и Канал 2)!"
+    if open_tc_1:
+        return "⚠ ВНИМАНИЕ: Обрыв цепи термопары (Канал 1)!"
+    if open_tc_2:
+        return "⚠ ВНИМАНИЕ: Обрыв цепи термопары (Канал 2)!"
+    return ""
 
 
 class MainWindow(QtWidgets.QMainWindow):
@@ -62,7 +87,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self._build_ui()
         self.acq_loop.sample_ready.connect(self._on_live_sample)
         self.acq_loop.error_occurred.connect(self._on_loop_error)
-        QtCore.QTimer.singleShot(50, self._connect_and_start_monitoring)
+        QtCore.QTimer.singleShot(50, self._startup_sequence)
 
     def _resolve_sensor(self, name: str, fallback: SensorSpec) -> SensorSpec:
         mgr = get_thermocouple_manager()
@@ -424,6 +449,114 @@ class MainWindow(QtWidgets.QMainWindow):
         self.acq_loop.heater.set_enabled(False)
         self.acq_loop.heater.reset()
 
+    def _startup_sequence(self) -> None:
+        self._check_pending_recovery()
+        self._connect_and_start_monitoring()
+
+    def _check_pending_recovery(self) -> None:
+        active_dir = self.session.active_staging_dir
+        prune_invalid_sessions(active_dir=active_dir)
+        pending_items = find_pending_sessions(active_dir=active_dir)
+        for item in pending_items:
+            self._prompt_recover_session(item)
+
+    def _prompt_recover_session(self, pending: PendingSession) -> None:
+        box = QtWidgets.QMessageBox(self)
+        box.setIcon(QtWidgets.QMessageBox.Icon.Warning)
+        box.setWindowTitle("Незавершённая запись измерения")
+        target_str = str(pending.target_path) if pending.target_path else "не указан"
+        box.setText(
+            "Обнаружена незавершённая запись измерения после предыдущего сеанса:\n"
+            f"• Образец: {pending.sample or '—'}\n"
+            f"• Оператор: {pending.operator or '—'}\n"
+            f"• Записано точек: {pending.row_count}\n"
+            f"• Целевой файл: {target_str}\n\n"
+            "Восстановить данные и сохранить их в файл .fus?"
+        )
+        btn_recover = box.addButton(
+            "Восстановить в .fus",
+            QtWidgets.QMessageBox.ButtonRole.AcceptRole,
+        )
+        btn_delete = box.addButton(
+            "Удалить запись",
+            QtWidgets.QMessageBox.ButtonRole.DestructiveRole,
+        )
+        box.addButton(
+            "Отложить",
+            QtWidgets.QMessageBox.ButtonRole.RejectRole,
+        )
+        box.exec()
+        clicked = box.clickedButton()
+
+        if clicked == btn_delete:
+            log.bind(
+                staging_dir=str(pending.staging_dir),
+                sample=pending.sample,
+                rows=pending.row_count,
+            ).info("User deleted pending recovery session")
+            remove_staging_dir(
+                pending.staging_dir,
+                remove_empty_target_stub=True,
+                target_path=pending.target_path,
+            )
+            return
+
+        if clicked != btn_recover:
+            return
+
+        dest = pending.target_path
+        need_prompt = (
+            dest is None
+            or not dest.parent.is_dir()
+            or (dest.is_file() and dest.stat().st_size > 1)
+        )
+        if need_prompt:
+            suggested = str(
+                dest
+                if dest is not None and dest.parent.is_dir()
+                else (config.last_save_dir / f"{pending.sample or 'recovered'}.fus")
+            )
+            fname, _ = QtWidgets.QFileDialog.getSaveFileName(  # noqa: PU001 — Qt QFileDialog API returns (path, filter)
+                self,
+                "Сохранить восстановленное измерение (.fus)",
+                suggested,
+                FUS_EXT_FILTER,
+            )
+            if not fname:
+                return
+            dest = Path(fname)
+            if dest.suffix.lower() != ".fus":
+                dest = dest.with_suffix(".fus")
+
+        assert dest is not None  # noqa: S101 — сужение типа Optional для mypy
+        try:
+            pack_staging_dir_to_fus(pending.staging_dir, dest)
+        except (OSError, ValueError) as exc:
+            log.opt(exception=True).bind(
+                staging_dir=str(pending.staging_dir),
+                target=str(dest),
+                error=repr(exc),
+            ).error("Failed to recover pending session to .fus")
+            QtWidgets.QMessageBox.critical(
+                self,
+                "Ошибка восстановления",
+                f"Не удалось восстановить измерение в файл '{dest}':\n{exc}",
+            )
+            return
+
+        log.bind(
+            staging_dir=str(pending.staging_dir),
+            target=str(dest),
+            sample=pending.sample,
+            rows=pending.row_count,
+        ).info("Recovered interrupted measurement to .fus")
+        remove_staging_dir(pending.staging_dir)
+        QtWidgets.QMessageBox.information(
+            self,
+            "Измерение восстановлено",
+            f"Данные успешно восстановлены и сохранены в файл:\n{dest}",
+        )
+
     def _connect_and_start_monitoring(self) -> None:
         self.acq_loop.stop_monitoring()
         if not self.hardware.connect_and_discover(mode=config.mode):
@@ -463,18 +596,30 @@ class MainWindow(QtWidgets.QMainWindow):
         self.lbl_cjc.setText(
             f"{sample.cjc_temp_c:.1f} °C ({self.session.cjc_t1.e_cold:.3f} мВ)"
         )
-        self.lbl_t1.setText(f"{sample.emf_1_mv:.3f} мВ")
-        self.lbl_temp.setText(f"<b>{pt.temp_1_c:.1f} °C</b>")
-        self.lbl_heat_rate.setText(f"{pt.heating_rate_c_min:+.1f} °C/мин")
+        if sample.open_tc_1:
+            self.lbl_t1.setText(_OPEN_TC_ERROR_HTML)
+            self.lbl_temp.setText(_OPEN_TC_ERROR_HTML)
+            self.lbl_heat_rate.setText(_OPEN_TC_ERROR_HTML)
+        else:
+            self.lbl_t1.setText(f"{sample.emf_1_mv:.3f} мВ")
+            self.lbl_temp.setText(f"<b>{pt.temp_1_c:.1f} °C</b>")
+            self.lbl_heat_rate.setText(f"{pt.heating_rate_c_min:+.1f} °C/мин")
 
         if config.mode == "vta":
             self.lbl_out.setText(f"{sample.heater_output_v:.3f} В")
         else:
-            self.lbl_t2.setText(f"{sample.emf_2_mv:.3f} мВ")
-            self.lbl_dta.setText(f"{pt.dta_mv:.3f} мВ")
+            self.lbl_t2.setText(
+                _OPEN_TC_ERROR_HTML if sample.open_tc_2 else f"{sample.emf_2_mv:.3f} мВ"
+            )
+            self.lbl_dta.setText(
+                _OPEN_TC_ERROR_HTML
+                if (sample.open_tc_1 or sample.open_tc_2)
+                else f"{pt.dta_mv:.3f} мВ"
+            )
 
-        if sample.open_thermocouple_warning:
-            self.lbl_warning.setText("⚠ ВНИМАНИЕ: Обнаружен обрыв цепи термопары!")
+        warn_text = format_open_tc_warning(sample.open_tc_1, sample.open_tc_2)
+        if warn_text:
+            self.lbl_warning.setText(warn_text)
             self.lbl_warning.show()
         else:
             self.lbl_warning.hide()
@@ -514,6 +659,8 @@ class MainWindow(QtWidgets.QMainWindow):
             self.session.stop_recording()
             self._save_recorded_session()
             return not self.session.has_unsaved_data
+        if ans == QtWidgets.QMessageBox.StandardButton.Discard:
+            self.session.discard_recording()
         return True
 
     def _start_new_measurement_dialog(self) -> None:
